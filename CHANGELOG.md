@@ -643,3 +643,53 @@ Complete backup and restore system with manual/automatic backups, ZIP compressio
 - Added `#OCDDropZone` style for drag-and-drop zone (dashed border, hover highlight)
 - Added `#OCRStats` style for stats panel card
 - Added `#OCRTextDisplay` style for monospace extracted text display
+
+### Task 17 — Groq Cloud AI Integration
+
+#### New Files
+- `app/services/groq_service.py` — Groq Cloud AI service for invoice text parsing
+- `.env.example` — Template for Groq API configuration
+
+#### Groq Service (`groq_service.py`)
+- `GroqService.parse_invoice(ocr_text)` — Main API: sends OCR text to Groq, returns `InvoiceData`
+- `GroqService.is_configured()` — Checks if GROQ_API_KEY is set
+- `GroqService.get_model()` — Returns configured model name
+- Environment loading via `python-dotenv`: reads `GROQ_API_KEY` and `GROQ_MODEL` from `.env`
+- System prompt instructs model to return ONLY valid JSON with structured invoice data
+- Response parsing: strips markdown code fences, validates JSON, maps to dataclasses
+- Error hierarchy: `GroqError` base, `GroqConfigError` (missing key), `GroqAPIError` (auth/rate/network), `GroqParseError` (invalid JSON)
+
+#### Data Classes
+- `InvoiceData` — supplier_name, invoice_number, invoice_date, grand_total, items list; computed properties (item_count, total_quantity, computed_total)
+- `InvoiceItem` — medicine_name, generic_name, company, batch_number, expiry_date, quantity, purchase_price, selling_price
+
+#### AI Error Handling
+- Missing API key → friendly message with .env setup instructions and console.groq.com link
+- Invalid API key → clear authentication error
+- Rate limits → retry message
+- Network errors → connection check message
+- Malformed JSON → shows raw response excerpt for debugging
+- Groq unavailable → temporary unavailability message
+- Empty OCR text → "nothing to analyze" message
+
+#### OCR Invoice Page Updates
+- **"Analyze with AI" button**: Purple themed, appears after successful OCR, disabled if Groq not configured
+- **AI processing**: Background QThread worker, cursor wait state, model name in status
+- **Invoice metadata panel**: Supplier, Invoice #, Date, Grand Total, Items Found, Total Quantity, Computed Total
+- **Editable items table**: 8 columns (Medicine, Generic, Company, Batch, Expiry, Qty, Purchase Price, Selling Price), editable cells, sorting enabled
+- **Clear button**: Resets both OCR and AI results
+- **Workflow**: Upload → OCR → Analyze with AI → Display structured data
+
+#### Dependencies
+- Added `groq>=0.4.0` for Groq Cloud AI SDK
+- Added `python-dotenv>=1.0.0` for .env file loading
+
+#### Configuration
+- `.env` file (gitignored) stores `GROQ_API_KEY` and `GROQ_MODEL`
+- `.env.example` provided as template
+- Default model: `llama-3.3-70b-versatile`
+
+#### Stylesheet
+- Added `#AIAnalyzeButton` style (purple theme, hover/pressed/disabled states)
+- Added `#AIResultsFrame` style for AI results container
+- Added `#AIItemsTable` style for editable items table
