@@ -17,6 +17,7 @@ from app.ui.pages.reports_page import ReportsPage
 from app.ui.pages.analytics_page import AnalyticsPage
 from app.ui.pages.expiry_page import ExpiryPage
 from app.ui.pages.low_stock_page import LowStockPage
+from app.ui.pages.ocr_invoice_page import OCRInvoicePage
 from app.ui.pages.backup_page import BackupPage
 from app.ui.pages.settings_page import SettingsPage
 
@@ -31,6 +32,7 @@ PAGE_MAP: dict[str, type[QWidget]] = {
     "Analytics": AnalyticsPage,
     "Expiry": ExpiryPage,
     "Low Stock": LowStockPage,
+    "AI Invoice Import": OCRInvoicePage,
     "Backup": BackupPage,
     "Settings": SettingsPage,
 }

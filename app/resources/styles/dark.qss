@@ -576,3 +576,34 @@ QCheckBox:hover {
 #InventoryTable::item:hover {
     background-color: #313244;
 }
+
+/* ---------- OCR Invoice Import ---------- */
+#OCDDropZone {
+    background-color: #181825;
+    border: 2px dashed #45475a;
+    border-radius: 8px;
+}
+#OCDDropZone:hover {
+    border-color: #89b4fa;
+    background-color: #1e1e2e;
+}
+
+#OCRStats {
+    background-color: #181825;
+    border: 1px solid #313244;
+    border-radius: 8px;
+}
+
+#OCRTextDisplay {
+    background-color: #181825;
+    color: #cdd6f4;
+    border: 1px solid #313244;
+    border-radius: 6px;
+    padding: 12px;
+    font-size: 10pt;
+    font-family: "Consolas", "Courier New", monospace;
+    selection-background-color: #45475a;
+}
+#OCRTextDisplay:focus {
+    border-color: #89b4fa;
+}

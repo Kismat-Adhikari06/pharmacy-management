@@ -598,3 +598,48 @@ Complete backup and restore system with manual/automatic backups, ZIP compressio
 #### Stylesheet
 - Added `#BarcodeLabelPreview` style for white-background label preview card
 - Added `#InventoryTable` style for inventory table (alternating rows, selection, hover)
+
+### Task 16 — OCR Foundation (Invoice Import)
+
+#### New Files
+- `app/services/ocr_service.py` — Offline OCR engine abstraction with PaddleOCR/EasyOCR fallback
+- `app/ui/pages/ocr_invoice_page.py` — AI Invoice Import page with upload, preview, and text extraction
+
+#### OCR Service (`ocr_service.py`)
+- `OCRService.extract_text(file_path)` — Main API: extracts text from image or PDF, returns `OCRResult`
+- `OCRService.extract_text_from_images(images, file_name)` — OCR from list of image bytes/paths
+- `OCRService.get_active_engine()` — Returns name of currently active engine (PaddleOCR/EasyOCR/None)
+- `OCRService.is_available()` — Check if any OCR engine is installed
+- `OCRService.is_supported(file_path)` — Check file extension support
+- Engine initialization: lazy-loads PaddleOCR first, falls back to EasyOCR
+- PDF processing: uses PyMuPDF (`fitz`) to render each page at 2x resolution, OCR each page
+- Image processing: directly OCR single images
+- Result dataclasses: `OCRResult` (file info, text, stats, page results), `PageResult` (per-page text/confidence)
+- Error hierarchy: `OCRError` base, `UnsupportedFileError`, `UnreadableFileError`, `OCREngineError`, `EmptyDocumentError`
+- Supported formats: JPG, JPEG, PNG, BMP, TIFF, WebP, PDF
+
+#### OCR Invoice Import Page (`ocr_invoice_page.py`)
+- **Upload buttons**: Upload Image (JPG/PNG), Upload PDF, Paste Image from Clipboard
+- **Drag & Drop zone**: Accepts image files, PDFs, and pasted images; visual feedback on drag hover
+- **Document preview**: Shows loaded image or first page of PDF in scrollable preview area
+- **Extracted text panel**: Read-only monospace text display with full extracted text
+- **Stats panel**: Engine used, pages processed (current/total), processing time, word count, confidence %, line count, character count
+- **Actions**: Copy All (clipboard), Clear, Process Document
+- **Background processing**: OCR runs in QThread worker to keep UI responsive; cursor changes to wait during processing
+- **Error handling**: Friendly messages for unsupported files, unreadable images, OCR failure, empty documents, missing engine
+- **Engine check**: Disables upload buttons if no OCR engine is available, shows install instructions
+
+#### Sidebar & Navigation
+- Added "AI Invoice Import" (📷) to sidebar navigation between Low Stock and Backup
+- Added `OCRInvoicePage` to `PAGE_MAP` in main window
+
+#### Dependencies
+- Added `PyMuPDF>=1.23.0` for PDF page rendering
+- Added `Pillow>=10.0.0` for image handling
+- Added `paddleocr>=2.7.0` and `paddlepaddle>=2.5.0` for primary OCR engine
+- Added `easyocr>=1.7.0` for fallback OCR engine
+
+#### Stylesheet
+- Added `#OCDDropZone` style for drag-and-drop zone (dashed border, hover highlight)
+- Added `#OCRStats` style for stats panel card
+- Added `#OCRTextDisplay` style for monospace extracted text display

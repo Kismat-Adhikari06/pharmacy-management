@@ -24,6 +24,7 @@ class Sidebar(QFrame):
         ("Analytics", "📈"),
         ("Expiry", "⏰"),
         ("Low Stock", "📉"),
+        ("AI Invoice Import", "📷"),
         ("Backup", "💾"),
         ("Settings", "⚙"),
     ]
