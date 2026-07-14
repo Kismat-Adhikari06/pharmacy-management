@@ -38,6 +38,14 @@ DEFAULTS: dict[str, object] = {
     "auto_backup_daily": "No",
     "auto_backup_weekly": "No",
     "max_backups": 10,
+    # Barcode
+    "barcode_prefix": "PHM",
+    "scanner_suffix": "",
+    "auto_add_after_scan": "Yes",
+    "play_success_sound": "No",
+    "play_error_sound": "No",
+    "barcode_label_width": "50x30mm",
+    "barcode_label_font_size": 8,
     # AI Settings (future)
     "groq_api_key": "",
     "groq_model": "llama3-8b-8192",
@@ -73,6 +81,15 @@ class AppSettings:
     auto_backup_daily: str = "No"
     auto_backup_weekly: str = "No"
     max_backups: int = 10
+
+    # Barcode
+    barcode_prefix: str = "PHM"
+    scanner_suffix: str = ""
+    auto_add_after_scan: str = "Yes"
+    play_success_sound: str = "No"
+    play_error_sound: str = "No"
+    barcode_label_width: str = "50x30mm"
+    barcode_label_font_size: int = 8
 
     groq_api_key: str = ""
     groq_model: str = "llama3-8b-8192"
@@ -128,6 +145,13 @@ class SettingsService:
                 groq_api_key=row.groq_api_key or "",
                 groq_model=row.groq_model or "llama3-8b-8192",
                 ocr_engine=row.ocr_engine or "Tesseract",
+                barcode_prefix=row.barcode_prefix or "PHM",
+                scanner_suffix=row.scanner_suffix or "",
+                auto_add_after_scan=row.auto_add_after_scan or "Yes",
+                play_success_sound=row.play_success_sound or "No",
+                play_error_sound=row.play_error_sound or "No",
+                barcode_label_width=row.barcode_label_width or "50x30mm",
+                barcode_label_font_size=row.barcode_label_font_size or 8,
             )
             return _settings_cache
         finally:
@@ -176,6 +200,13 @@ class SettingsService:
             row.groq_api_key = settings.groq_api_key
             row.groq_model = settings.groq_model
             row.ocr_engine = settings.ocr_engine
+            row.barcode_prefix = settings.barcode_prefix
+            row.scanner_suffix = settings.scanner_suffix
+            row.auto_add_after_scan = settings.auto_add_after_scan
+            row.play_success_sound = settings.play_success_sound
+            row.play_error_sound = settings.play_error_sound
+            row.barcode_label_width = settings.barcode_label_width
+            row.barcode_label_font_size = settings.barcode_label_font_size
 
             session.commit()
             _settings_cache = settings

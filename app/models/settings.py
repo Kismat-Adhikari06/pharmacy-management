@@ -43,7 +43,16 @@ class Settings(Base):
     auto_backup_weekly: Mapped[str] = mapped_column(String(3), default="No")
     max_backups: Mapped[int] = mapped_column(Integer, default=10)
 
-    # ── Section 6: AI Settings (future) ─────────────────────────
+    # ── Section 6: Barcode ───────────────────────────────────────
+    barcode_prefix: Mapped[str] = mapped_column(String(10), default="PHM")
+    scanner_suffix: Mapped[str] = mapped_column(String(10), default="")
+    auto_add_after_scan: Mapped[str] = mapped_column(String(3), default="Yes")
+    play_success_sound: Mapped[str] = mapped_column(String(3), default="No")
+    play_error_sound: Mapped[str] = mapped_column(String(3), default="No")
+    barcode_label_width: Mapped[str] = mapped_column(String(20), default="50x30mm")
+    barcode_label_font_size: Mapped[int] = mapped_column(Integer, default=8)
+
+    # ── Section 7: AI Settings (future) ─────────────────────────
     groq_api_key: Mapped[str] = mapped_column(String(500), default="")
     groq_model: Mapped[str] = mapped_column(String(100), default="llama3-8b-8192")
     ocr_engine: Mapped[str] = mapped_column(String(50), default="Tesseract")

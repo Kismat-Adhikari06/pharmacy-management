@@ -48,6 +48,7 @@ class SettingsPage(QWidget):
         ("Notifications", "\U0001f514"),
         ("Appearance", "\U0001f3a8"),
         ("Backup", "\U0001f4be"),
+        ("Barcode", "\U0001f4d1"),
         ("AI Settings", "\U0001f916"),
     ]
 
@@ -104,6 +105,7 @@ class SettingsPage(QWidget):
         self._page_notifications = self._build_notifications_page()
         self._page_appearance = self._build_appearance_page()
         self._page_backup = self._build_backup_page()
+        self._page_barcode = self._build_barcode_page()
         self._page_ai = self._build_ai_page()
 
         self._stack.addWidget(self._page_pharmacy)
@@ -111,6 +113,7 @@ class SettingsPage(QWidget):
         self._stack.addWidget(self._page_notifications)
         self._stack.addWidget(self._page_appearance)
         self._stack.addWidget(self._page_backup)
+        self._stack.addWidget(self._page_barcode)
         self._stack.addWidget(self._page_ai)
 
         body.addWidget(self._stack, 1)
@@ -404,7 +407,57 @@ class SettingsPage(QWidget):
         outer.addWidget(scroll)
         return container
 
-    # ── Section 6: AI Settings (future) ─────────────────────────
+    # ── Section 6: Barcode ──────────────────────────────────────
+
+    def _build_barcode_page(self) -> QWidget:
+        container = QWidget()
+        outer = QVBoxLayout(container)
+        outer.setContentsMargins(0, 0, 0, 0)
+
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setObjectName("ContentArea")
+
+        form = QWidget()
+        form.setObjectName("ContentArea")
+        layout = QVBoxLayout(form)
+        layout.setContentsMargins(16, 12, 16, 12)
+        layout.setSpacing(12)
+
+        self._add_section_header(layout, "Barcode & Scanner Settings")
+
+        self._inp_barcode_prefix = QLineEdit()
+        self._inp_barcode_prefix.setPlaceholderText("e.g. PHM")
+        self._add_field_row(layout, "Barcode Prefix", self._inp_barcode_prefix, "Prefix added to generated barcodes (e.g. PHM)")
+
+        self._inp_scanner_suffix = QLineEdit()
+        self._inp_scanner_suffix.setPlaceholderText("e.g. \\r\\n")
+        self._add_field_row(layout, "Scanner Suffix", self._inp_scanner_suffix, "Suffix character sent by scanner after barcode (often Enter/CR)")
+
+        self._chk_auto_add = QCheckBox("Automatically add scanned medicine to bill")
+        self._add_field_row(layout, "Auto-Add on Scan", self._chk_auto_add, "When a barcode is scanned in POS, add the medicine directly")
+
+        self._chk_success_sound = QCheckBox("Play a sound on successful scan")
+        self._add_field_row(layout, "Success Sound", self._chk_success_sound, "Audible feedback when a barcode is recognized")
+
+        self._chk_error_sound = QCheckBox("Play a sound on failed scan")
+        self._add_field_row(layout, "Error Sound", self._chk_error_sound, "Audible feedback when a barcode is not found")
+
+        self._inp_label_width = QComboBox()
+        self._inp_label_width.addItems(["50x30mm", "70x40mm", "100x50mm", "Custom"])
+        self._add_field_row(layout, "Label Size", self._inp_label_width, "Default size for printed barcode labels")
+
+        self._inp_label_font = QSpinBox()
+        self._inp_label_font.setRange(6, 16)
+        self._add_field_row(layout, "Label Font Size", self._inp_label_font, "Font size for text on barcode labels")
+
+        layout.addStretch()
+        scroll.setWidget(form)
+        outer.addWidget(scroll)
+        return container
+
+    # ── Section 7: AI Settings (future) ─────────────────────────
 
     def _build_ai_page(self) -> QWidget:
         container = QWidget()
@@ -507,6 +560,17 @@ class SettingsPage(QWidget):
         self._chk_weekly_backup.setChecked(s.auto_backup_weekly == "Yes")
         self._inp_max_backups.setValue(s.max_backups)
 
+        # Barcode
+        self._inp_barcode_prefix.setText(s.barcode_prefix)
+        self._inp_scanner_suffix.setText(s.scanner_suffix)
+        self._chk_auto_add.setChecked(s.auto_add_after_scan == "Yes")
+        self._chk_success_sound.setChecked(s.play_success_sound == "Yes")
+        self._chk_error_sound.setChecked(s.play_error_sound == "Yes")
+        idx = self._inp_label_width.findText(s.barcode_label_width)
+        if idx >= 0:
+            self._inp_label_width.setCurrentIndex(idx)
+        self._inp_label_font.setValue(s.barcode_label_font_size)
+
         # AI
         self._inp_api_key.setText(s.groq_api_key)
         idx = self._inp_model.findText(s.groq_model)
@@ -540,6 +604,13 @@ class SettingsPage(QWidget):
             auto_backup_daily="Yes" if self._chk_daily_backup.isChecked() else "No",
             auto_backup_weekly="Yes" if self._chk_weekly_backup.isChecked() else "No",
             max_backups=self._inp_max_backups.value(),
+            barcode_prefix=self._inp_barcode_prefix.text().strip() or "PHM",
+            scanner_suffix=self._inp_scanner_suffix.text().strip(),
+            auto_add_after_scan="Yes" if self._chk_auto_add.isChecked() else "No",
+            play_success_sound="Yes" if self._chk_success_sound.isChecked() else "No",
+            play_error_sound="Yes" if self._chk_error_sound.isChecked() else "No",
+            barcode_label_width=self._inp_label_width.currentText(),
+            barcode_label_font_size=self._inp_label_font.value(),
             groq_api_key=self._inp_api_key.text().strip(),
             groq_model=self._inp_model.currentText(),
             ocr_engine=self._inp_ocr.currentText(),

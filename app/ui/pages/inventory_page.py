@@ -28,6 +28,7 @@ from app.services.batch_service import (
     BatchService,
     DuplicateBatchError,
 )
+from app.services.barcode_service import BarcodeService
 from app.ui.dialogs.medicine_dialog import MedicineDialog
 from app.ui.dialogs.batch_dialog import BatchDialog
 
@@ -136,6 +137,18 @@ class InventoryPage(QWidget):
         refresh_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         refresh_btn.clicked.connect(self.refresh_medicines)
         toolbar.addWidget(refresh_btn)
+
+        barcode_btn = QPushButton("\U0001f4d1  Generate Barcode")
+        barcode_btn.setObjectName("ToolbarButton")
+        barcode_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        barcode_btn.clicked.connect(self._on_generate_barcode)
+        toolbar.addWidget(barcode_btn)
+
+        label_btn = QPushButton("\U0001f5a8\ufe0f  Print Label")
+        label_btn.setObjectName("ToolbarButton")
+        label_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        label_btn.clicked.connect(self._on_print_label)
+        toolbar.addWidget(label_btn)
 
         toolbar.addStretch()
 
@@ -401,6 +414,7 @@ class InventoryPage(QWidget):
                 barcode=med.barcode or "",
                 rack_location=med.rack_location or "",
                 minimum_stock=med.minimum_stock,
+                medicine_id=med_id,
             )
         finally:
             if session is not None:
@@ -569,3 +583,81 @@ class InventoryPage(QWidget):
         if item is None:
             return None
         return item.data(Qt.ItemDataRole.UserRole)
+
+    # ------------------------------------------------------------------
+    # Barcode Actions
+    # ------------------------------------------------------------------
+
+    def _on_generate_barcode(self) -> None:
+        """Generate a barcode for the selected medicine."""
+        med_id = self._selected_med_id()
+        if med_id is None:
+            QMessageBox.information(self, "No Selection", "Please select a medicine.")
+            return
+
+        from app.services.settings_service import SettingsService
+        from app.database.engine import new_session
+        from app.models.medicine import Medicine
+
+        session = None
+        try:
+            session = new_session()
+            med = session.get(Medicine, med_id)
+            if med is None:
+                QMessageBox.warning(self, "Not Found", "Medicine not found.")
+                return
+
+            if med.barcode:
+                reply = QMessageBox.question(
+                    self, "Existing Barcode",
+                    f"This medicine already has barcode: {med.barcode}\n"
+                    "Generate a new one?",
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                    QMessageBox.StandardButton.No,
+                )
+                if reply != QMessageBox.StandardButton.Yes:
+                    return
+
+            settings = SettingsService.get()
+            new_barcode = BarcodeService.generate_unique(prefix=settings.barcode_prefix)
+            med.barcode = new_barcode
+            session.commit()
+            session.refresh(med)
+
+            QMessageBox.information(
+                self, "Barcode Generated",
+                f"Barcode assigned:\n{new_barcode}",
+            )
+            self.refresh_medicines()
+        except Exception as exc:
+            if session:
+                session.rollback()
+            QMessageBox.critical(self, "Error", f"Failed to generate barcode:\n{exc}")
+        finally:
+            if session:
+                session.close()
+
+    def _on_print_label(self) -> None:
+        """Print a barcode label for the selected medicine."""
+        med_id = self._selected_med_id()
+        if med_id is None:
+            QMessageBox.information(self, "No Selection", "Please select a medicine.")
+            return
+
+        from app.ui.dialogs.barcode_label_dialog import BarcodeLabelDialog
+
+        label_data = BarcodeService.get_label_data(med_id)
+        if label_data is None:
+            QMessageBox.warning(self, "Not Found", "Medicine not found.")
+            return
+
+        if not label_data.barcode:
+            QMessageBox.information(
+                self, "No Barcode",
+                "This medicine does not have a barcode.\n"
+                "Generate one first using the 'Generate Barcode' button.",
+            )
+            return
+
+        dlg = BarcodeLabelDialog(label_data, parent=self)
+        dlg.exec()

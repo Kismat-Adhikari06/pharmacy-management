@@ -32,6 +32,8 @@ from app.services.billing_service import (
     NoStockError,
     SaleValidationError,
 )
+from app.services.barcode_service import BarcodeService
+from app.services.settings_service import SettingsService
 from app.services.receipt_service import ReceiptData, ReceiptService
 from app.ui.dialogs.payment_dialog import PaymentDialog
 from app.ui.dialogs.receipt_preview_dialog import ReceiptPreviewDialog
@@ -326,6 +328,18 @@ class BillingPage(BasePage):
             self._clear_cards()
             return
 
+        # Barcode auto-detection
+        settings = SettingsService.get()
+        scan = BarcodeService.detect_scan(
+            query,
+            prefix=settings.barcode_prefix,
+            suffix=settings.scanner_suffix,
+        )
+
+        if scan.is_barcode:
+            self._handle_barcode_scan(scan.cleaned)
+            return
+
         try:
             results = BillingService.search_medicines(query)
         except Exception as exc:
@@ -342,6 +356,84 @@ class BillingPage(BasePage):
             card = self._MedicineCard(med)
             card.clicked.connect(self._add_medicine)
             self._results_layout.insertWidget(self._results_layout.count() - 1, card)
+
+    def _handle_barcode_scan(self, barcode: str) -> None:
+        """Handle a detected barcode scan — look up and auto-add to bill."""
+        settings = SettingsService.get()
+        med = BarcodeService.find_by_barcode(barcode)
+        if med is None:
+            self._results_label.setText(f"Barcode not found: {barcode}")
+            self._clear_cards()
+            if settings and settings.play_error_sound == "Yes":
+                self._play_beep(error=True)
+            return
+
+        if settings and settings.play_success_sound == "Yes":
+            self._play_beep(error=False)
+
+        # Fetch FEFO batches
+        try:
+            batches = BillingService.get_fefo_batches(med.id)
+        except Exception as exc:
+            logger.exception("Failed to fetch batches for barcode scan")
+            QMessageBox.warning(self, "Error", str(exc))
+            return
+
+        if not batches:
+            self._results_label.setText(f"No stock for: {med.medicine_name}")
+            self._clear_cards()
+            return
+
+        # Auto-add: single batch → add 1 directly; multiple → show quantity picker
+        if len(batches) == 1:
+            bid, bnum, exp, price, max_qty = batches[0]
+            existing = self._find_item(bid)
+            if existing:
+                if existing.quantity < max_qty:
+                    existing.quantity += 1
+                else:
+                    QMessageBox.information(
+                        self, "Max Stock",
+                        f"Only {max_qty} units available in batch {bnum}.",
+                    )
+                    return
+            else:
+                self._bill_items.append(
+                    BillItem(
+                        medicine_id=med.id,
+                        medicine_name=med.medicine_name,
+                        batch_id=bid,
+                        batch_number=bnum,
+                        expiry_date=exp.strftime("%Y-%m-%d"),
+                        quantity=1,
+                        unit_price=price,
+                    )
+                )
+            self._refresh_table()
+            self._results_label.setText(f"Added: {med.medicine_name}")
+            self._search_input.clear()
+            self._clear_cards()
+        else:
+            # Multiple batches — show picker for earliest-expiry batch
+            batch = batches[0]
+            bid, bnum, exp, price, max_qty = batch
+            self._show_quantity_picker(
+                med.id, bid, bnum, exp, price, max_qty,
+            )
+            self._results_label.setText(f"Added: {med.medicine_name}")
+            self._search_input.clear()
+            self._clear_cards()
+
+    def _play_beep(self, error: bool = False) -> None:
+        """Play a system beep for scan feedback."""
+        try:
+            from PySide6.QtCore import QCoreApplication
+            if error:
+                QCoreApplication.beep()
+            else:
+                QCoreApplication.beep()
+        except Exception:
+            pass
 
     def _clear_cards(self) -> None:
         while self._results_layout.count():

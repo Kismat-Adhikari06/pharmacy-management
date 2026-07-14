@@ -538,3 +538,63 @@ Complete backup and restore system with manual/automatic backups, ZIP compressio
 - Weekly: once per week (marker file tracks last run)
 - After backup: enforces `max_backups` limit by deleting oldest files
 - Runs silently in background, logged to console
+
+### Task 15 — Barcode Scanner & Barcode Management
+
+#### New Files
+- `app/services/barcode_service.py` — Barcode generation, validation, detection, lookup, and label data
+- `app/ui/dialogs/barcode_label_dialog.py` — Barcode label preview and print dialog (ReportLab PDF)
+
+#### Database — Settings Model
+- Added 7 new columns to `settings` table: `barcode_prefix`, `scanner_suffix`, `auto_add_after_scan`, `play_success_sound`, `play_error_sound`, `barcode_label_width`, `barcode_label_font_size`
+- Migration handled automatically by `_migrate_columns()`
+
+#### Settings Service
+- `AppSettings` dataclass expanded with 7 barcode fields (defaults: prefix=PHM, suffix=empty, auto_add=Yes, sounds=No, label=50x30mm, font=8)
+- `DEFAULTS` dict updated with barcode settings
+- `load()` and `save()` methods updated to persist barcode settings
+
+#### Barcode Service (`barcode_service.py`)
+- `generate(prefix)` — Generates a 13-char barcode (prefix + random digits)
+- `generate_unique(prefix)` — Generates a guaranteed-unique barcode (50 retry attempts)
+- `validate(barcode)` — Checks format (alphanumeric/hyphens, 4-50 chars)
+- `is_unique(barcode, exclude_id)` — Checks barcode is not already assigned
+- `check_duplicate(barcode, exclude_id)` — Returns the owner medicine name or None
+- `detect_scan(raw, prefix, suffix)` — Parses scanner input: strips prefix/suffix, detects barcode vs text search
+- `find_by_barcode(barcode)` — Exact barcode lookup returning Medicine ORM object
+- `get_label_data(medicine_id)` — Returns LabelData with medicine name, barcode, price, batch, expiry
+- `get_label_data_batch(batch_id)` — Returns LabelData for a specific batch
+
+#### Barcode Label Dialog
+- White preview card showing medicine name, generic, company, barcode text, price, batch, expiry
+- Print count spinner (1-100)
+- Generates A4 PDF with labels arranged in grid (50x30mm each)
+- Uses ReportLab canvas; sends to system printer via `ReceiptService.print_pdf()`
+
+#### Billing Page — Barcode Auto-Detection
+- Search input now detects barcode scanner input via `BarcodeService.detect_scan()`
+- Strips configured prefix/suffix from scanner input
+- Pure numeric input >= 8 chars treated as barcode
+- Barcode match: looks up medicine, auto-adds to bill (single batch → qty 1, multiple → qty picker)
+- Success/error beep feedback via `QCoreApplication.beep()` (configurable in settings)
+- Text search still works normally for non-barcode input
+
+#### Inventory Page — Barcode Actions
+- "Generate Barcode" toolbar button: generates unique barcode for selected medicine, saves to DB
+- "Print Label" toolbar button: opens BarcodeLabelDialog for selected medicine
+- Handles existing barcode (prompts to replace), missing barcode (prompts to generate first)
+
+#### Medicine Dialog — Enhanced Barcode
+- "Generate" button added next to barcode field for inline barcode generation
+- On save: validates barcode format (4-50 chars, alphanumeric/hyphens)
+- On save: checks for duplicate barcode (shows owner medicine name on conflict)
+- Passes `medicine_id` from inventory edit to exclude self from duplicate check
+
+#### Settings Page — Barcode Section
+- New 7th section "Barcode" in settings navigation with barcode icon
+- Fields: Barcode Prefix, Scanner Suffix, Auto-Add on Scan checkbox, Success/Error Sound checkboxes, Label Size dropdown, Label Font Size spinner
+- Form load/save/reset all handle barcode settings
+
+#### Stylesheet
+- Added `#BarcodeLabelPreview` style for white-background label preview card
+- Added `#InventoryTable` style for inventory table (alternating rows, selection, hover)

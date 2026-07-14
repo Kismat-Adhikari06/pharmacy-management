@@ -547,3 +547,32 @@ QCheckBox:hover {
     background-color: #89b4fa;
     border-radius: 3px;
 }
+
+/* ---------- Barcode Label Preview ---------- */
+#BarcodeLabelPreview {
+    background-color: #ffffff;
+    border: 1px solid #45475a;
+    border-radius: 8px;
+}
+
+/* ---------- Inventory Table ---------- */
+#InventoryTable {
+    background-color: #1e1e2e;
+    alternate-background-color: #181825;
+    color: #cdd6f4;
+    border: 1px solid #313244;
+    border-radius: 6px;
+    gridline-color: #313244;
+    selection-background-color: #45475a;
+    selection-color: #cdd6f4;
+    font-size: 10pt;
+}
+#InventoryTable::item {
+    padding: 6px 10px;
+}
+#InventoryTable::item:selected {
+    background-color: #45475a;
+}
+#InventoryTable::item:hover {
+    background-color: #313244;
+}
