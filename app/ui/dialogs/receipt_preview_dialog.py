@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
 )
 
 from app.services.receipt_service import ReceiptData, ReceiptService
+from app.ui.theme import Theme
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +72,7 @@ class ReceiptPreviewDialog(QDialog):
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
         )
         self._preview_label.setStyleSheet(
-            "background-color: #181825; border: 1px solid #313244; border-radius: 6px;"
+            f"background-color: {Theme.card()}; border: 1px solid {Theme.border()}; border-radius: 6px;"
         )
         layout.addWidget(self._preview_label, stretch=1)
 

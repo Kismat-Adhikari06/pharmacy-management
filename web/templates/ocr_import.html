@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}AI Invoice Import — Pharmacy{% endblock %}
+{% block page_title %}AI Invoice Import{% endblock %}
+{% block page_sub %}Import purchase invoices using OCR and AI{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width:640px;">
+    <div class="section-title">OCR Invoice Processing</div>
+    <p class="text-muted" style="margin-bottom:20px;">
+        Upload an invoice image or PDF to automatically extract medicine data using OCR.
+        The AI will parse the text and suggest items for import into your inventory.
+    </p>
+    <div class="form-group">
+        <label class="form-label">Invoice Image / PDF</label>
+        <input type="file" class="form-input" accept="image/*,.pdf" id="ocrFile">
+    </div>
+    <div class="form-group">
+        <label class="form-label">Or paste OCR text directly</label>
+        <textarea class="form-textarea" id="ocrText" rows="6" placeholder="Paste extracted invoice text here..."></textarea>
+    </div>
+    <button class="btn btn-primary" onclick="processOCR()">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Process Invoice
+    </button>
+    <div id="ocrResult" class="mt-4"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function processOCR() {
+    const text = document.getElementById('ocrText').value.trim();
+    if (!text) {
+        document.getElementById('ocrResult').innerHTML = '<div class="flash flash-error">Please paste OCR text or upload a file</div>';
+        return;
+    }
+    document.getElementById('ocrResult').innerHTML = '<div class="text-muted">Processing... (AI parsing requires Groq API key in Settings)</div>';
+}
+</script>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Low Stock — Pharmacy{% endblock %}
+{% block page_title %}Low Stock Alert{% endblock %}
+{% block page_sub %}Medicines at or below minimum stock level{% endblock %}
+
+{% block content %}
+<div class="table-wrapper">
+    <div class="table-header">
+        <div class="table-title">Low Stock Medicines</div>
+        <span class="badge badge-danger">{{ items|length }} items</span>
+    </div>
+    {% if items %}
+    <div class="table-scroll">
+        <table>
+            <thead>
+                <tr>
+                    <th>Medicine</th>
+                    <th>Generic</th>
+                    <th>Company</th>
+                    <th class="text-right">Current Stock</th>
+                    <th class="text-right">Minimum Stock</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in items %}
+                <tr>
+                    <td style="font-weight:600;">{{ m.medicine_name }}</td>
+                    <td class="text-sm">{{ m.generic_name or '-' }}</td>
+                    <td class="text-sm">{{ m.company or '-' }}</td>
+                    <td class="text-right font-mono" style="font-weight:600; color: var(--danger);">{{ m._current_stock }}</td>
+                    <td class="text-right font-mono">{{ m.minimum_stock }}</td>
+                    <td>
+                        {% if m._current_stock == 0 %}
+                            <span class="badge badge-danger">Out of Stock</span>
+                        {% else %}
+                            <span class="badge badge-warning">Low Stock</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="table-empty">All medicines are adequately stocked</div>
+    {% endif %}
+</div>
+{% endblock %}

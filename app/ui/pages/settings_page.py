@@ -26,15 +26,7 @@ from app.services.settings_service import AppSettings, SettingsService
 
 logger = logging.getLogger(__name__)
 
-# ── Colour palette (matches dark.qss) ──────────────────────────
-_TEXT = "#cdd6f4"
-_SUBTEXT = "#a6adc8"
-_BLUE = "#89b4fa"
-_GREEN = "#a6e3a1"
-_YELLOW = "#f9e2af"
-_RED = "#f38ba8"
-_BORDER = "#313244"
-_CARD_BG = "#181825"
+from app.ui.theme import Theme
 
 
 class SettingsPage(QWidget):
@@ -43,13 +35,13 @@ class SettingsPage(QWidget):
     settings_changed = Signal()
 
     SECTIONS: list[tuple[str, str]] = [
-        ("Pharmacy Info", "\U0001f3e5"),
-        ("Billing", "\U0001f4b3"),
-        ("Notifications", "\U0001f514"),
-        ("Appearance", "\U0001f3a8"),
-        ("Backup", "\U0001f4be"),
-        ("Barcode", "\U0001f4d1"),
-        ("AI Settings", "\U0001f916"),
+        ("Pharmacy Info", ""),
+        ("Billing", ""),
+        ("Notifications", ""),
+        ("Appearance", ""),
+        ("Backup", ""),
+        ("Barcode", ""),
+        ("AI Settings", ""),
     ]
 
     def __init__(self, parent: QWidget | None = None) -> None:
@@ -70,7 +62,7 @@ class SettingsPage(QWidget):
         # ── Header ─────────────────────────────────────────────
         hdr = QHBoxLayout()
         hdr.setContentsMargins(20, 16, 20, 8)
-        title = QLabel("\u2699\ufe0f Settings")
+        title = QLabel("Settings")
         title.setObjectName("PageTitle")
         hdr.addWidget(title)
         hdr.addStretch()
@@ -86,7 +78,7 @@ class SettingsPage(QWidget):
         self._nav_layout.setSpacing(4)
         self._nav_buttons: dict[str, QPushButton] = {}
         for label, icon in self.SECTIONS:
-            btn = QPushButton(f"  {icon}  {label}")
+            btn = QPushButton(f"  {label}")
             btn.setCheckable(True)
             btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
             btn.setObjectName("SettingsNavBtn")
@@ -125,7 +117,7 @@ class SettingsPage(QWidget):
         btn_row.setSpacing(10)
 
         self._status_label = QLabel("")
-        self._status_label.setStyleSheet(f"color: {_SUBTEXT}; font-size: 9pt;")
+        self._status_label.setStyleSheet(f"color: {Theme.text2()}; font-size: 9pt; background: transparent;")
         btn_row.addWidget(self._status_label)
         btn_row.addStretch()
 
@@ -187,7 +179,7 @@ class SettingsPage(QWidget):
         row.setSpacing(12)
         lbl = QLabel(label)
         lbl.setFixedWidth(200)
-        lbl.setStyleSheet(f"color: {_SUBTEXT}; font-size: 10pt;")
+        lbl.setStyleSheet(f"color: {Theme.text2()}; font-size: 10pt; background: transparent;")
         row.addWidget(lbl)
         if tooltip:
             widget.setToolTip(tooltip)
@@ -379,7 +371,7 @@ class SettingsPage(QWidget):
         folder_row.setSpacing(12)
         folder_lbl = QLabel("Backup Folder")
         folder_lbl.setFixedWidth(200)
-        folder_lbl.setStyleSheet(f"color: {_SUBTEXT}; font-size: 10pt;")
+        folder_lbl.setStyleSheet(f"color: {Theme.text2()}; font-size: 10pt; background: transparent;")
         folder_row.addWidget(folder_lbl)
         self._inp_backup_folder = QLineEdit()
         folder_row.addWidget(self._inp_backup_folder, 1)
@@ -481,7 +473,7 @@ class SettingsPage(QWidget):
             "These settings are for future AI-powered features.\n"
             "Values are saved and will be used when AI integration is enabled."
         )
-        future_lbl.setStyleSheet(f"color: {_SUBTEXT}; font-size: 9pt; margin-bottom: 8px;")
+        future_lbl.setStyleSheet(f"color: {Theme.text2()}; font-size: 9pt; margin-bottom: 8px; background: transparent;")
         future_lbl.setWordWrap(True)
         layout.addWidget(future_lbl)
 
@@ -621,21 +613,21 @@ class SettingsPage(QWidget):
 
         # Validate
         if not settings.pharmacy_name:
-            self._status_label.setText("\u26a0\ufe0f Pharmacy name is required.")
-            self._status_label.setStyleSheet(f"color: {_RED}; font-size: 9pt;")
+            self._status_label.setText("Pharmacy name is required.")
+            self._status_label.setStyleSheet(f"color: {Theme.danger()}; font-size: 9pt; background: transparent;")
             self._switch_section("Pharmacy Info")
             return
 
         try:
             SettingsService.save(settings)
             self._settings = settings
-            self._status_label.setText("\u2705 Settings saved successfully.")
-            self._status_label.setStyleSheet(f"color: {_GREEN}; font-size: 9pt;")
+            self._status_label.setText("Settings saved successfully.")
+            self._status_label.setStyleSheet(f"color: {Theme.success()}; font-size: 9pt; background: transparent;")
             self.settings_changed.emit()
         except Exception as e:
             logger.exception("Failed to save settings")
-            self._status_label.setText(f"\u274c Failed to save: {e}")
-            self._status_label.setStyleSheet(f"color: {_RED}; font-size: 9pt;")
+            self._status_label.setText(f"Failed to save: {e}")
+            self._status_label.setStyleSheet(f"color: {Theme.danger()}; font-size: 9pt; background: transparent;")
 
     def _reset(self) -> None:
         from PySide6.QtWidgets import QMessageBox
@@ -650,15 +642,15 @@ class SettingsPage(QWidget):
         if reply == QMessageBox.StandardButton.Yes:
             self._settings = SettingsService.reset()
             self._load_form()
-            self._status_label.setText("\u2705 Settings reset to defaults.")
-            self._status_label.setStyleSheet(f"color: {_GREEN}; font-size: 9pt;")
+            self._status_label.setText("Settings reset to defaults.")
+            self._status_label.setStyleSheet(f"color: {Theme.success()}; font-size: 9pt; background: transparent;")
             self.settings_changed.emit()
 
     def _cancel(self) -> None:
         self._settings = SettingsService.get()
         self._load_form()
         self._status_label.setText("Changes discarded.")
-        self._status_label.setStyleSheet(f"color: {_SUBTEXT}; font-size: 9pt;")
+        self._status_label.setStyleSheet(f"color: {Theme.text2()}; font-size: 9pt; background: transparent;")
 
     def _browse_backup_folder(self) -> None:
         folder = QFileDialog.getExistingDirectory(

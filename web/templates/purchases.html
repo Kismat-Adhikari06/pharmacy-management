@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% block title %}Purchases — Pharmacy{% endblock %}
+{% block page_title %}Purchases{% endblock %}
+{% block page_sub %}Record supplier purchases and stock entries{% endblock %}
+
+{% block content %}
+<div class="table-wrapper">
+    <div class="table-header">
+        <div class="flex items-center gap-3">
+            <div class="table-title">Purchase History</div>
+            <span class="badge badge-neutral">{{ purchases|length }} records</span>
+        </div>
+        <div class="flex gap-2">
+            <form method="GET" class="search-box">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" name="q" value="{{ q }}" placeholder="Search invoice #...">
+            </form>
+            <button class="btn btn-primary" onclick="openModal('addPurchaseModal')">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                New Purchase
+            </button>
+        </div>
+    </div>
+    {% if purchases %}
+    <div class="table-scroll">
+        <table>
+            <thead>
+                <tr>
+                    <th>Invoice #</th>
+                    <th>Supplier</th>
+                    <th>Date</th>
+                    <th class="text-right">Amount</th>
+                    <th>Notes</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in purchases %}
+                <tr>
+                    <td class="font-mono text-sm">{{ p.invoice_number }}</td>
+                    <td>{{ p.supplier.supplier_name if p.supplier else '-' }}</td>
+                    <td class="text-sm">{{ p.purchase_date.strftime('%Y-%m-%d') if p.purchase_date else '-' }}</td>
+                    <td class="text-right font-mono" style="font-weight:600;">Rs {{ "{:,.2f}".format(p.total_amount) }}</td>
+                    <td class="text-sm text-muted truncate" style="max-width:200px;">{{ p.notes or '-' }}</td>
+                    <td>
+                        <button class="action-btn" title="View" onclick="viewPurchase({{ p.id }})">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="table-empty">No purchases recorded yet</div>
+    {% endif %}
+</div>
+
+<!-- New Purchase Modal -->
+<div class="modal-overlay" id="addPurchaseModal">
+    <div class="modal" style="max-width:640px;">
+        <div class="modal-header">
+            <div class="modal-title">New Purchase</div>
+            <button class="modal-close" onclick="closeModal('addPurchaseModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Supplier *</label>
+                    <select class="form-select" id="purchaseSupplier">
+                        <option value="">Select supplier...</option>
+                        {% for s in suppliers %}
+                        <option value="{{ s.id }}">{{ s.supplier_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Invoice Number *</label>
+                    <input type="text" class="form-input" id="purchaseInvoice">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Date</label>
+                <input type="date" class="form-input" id="purchaseDate" value="{{ today }}">
+            </div>
+            <div class="section-title mt-4">Items</div>
+            <div id="purchaseItems"></div>
+            <button class="btn btn-secondary btn-sm mt-2" onclick="addPurchaseItem()">+ Add Item</button>
+            <div class="form-group mt-4">
+                <label class="form-label">Notes</label>
+                <textarea class="form-textarea" id="purchaseNotes" rows="2"></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('addPurchaseModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="submitPurchase()">Save Purchase</button>
+        </div>
+    </div>
+</div>
+
+<!-- View Purchase Modal -->
+<div class="modal-overlay" id="viewPurchaseModal">
+    <div class="modal" style="max-width:600px;">
+        <div class="modal-header">
+            <div class="modal-title" id="viewPurchaseTitle">Purchase Details</div>
+            <button class="modal-close" onclick="closeModal('viewPurchaseModal')">&times;</button>
+        </div>
+        <div class="modal-body" id="viewPurchaseBody"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let purchaseItemIdx = 0;
+
+function addPurchaseItem() {
+    const html = '<div class="form-row-3 mb-4" id="pItem' + purchaseItemIdx + '">' +
+        '<div class="form-group"><label class="form-label">Medicine ID</label><input type="number" class="form-input pMedId" placeholder="ID"></div>' +
+        '<div class="form-group"><label class="form-label">Batch #</label><input type="text" class="form-input pBatchNum"></div>' +
+        '<div class="form-group"><label class="form-label">Expiry</label><input type="date" class="form-input pExpiry"></div>' +
+        '<div class="form-group"><label class="form-label">Qty</label><input type="number" class="form-input pQty" value="1"></div>' +
+        '<div class="form-group"><label class="form-label">Buy Price</label><input type="number" step="0.01" class="form-input pPrice"></div>' +
+        '<div class="form-group"><label class="form-label">Sell Price</label><input type="number" step="0.01" class="form-input pSellPrice"></div>' +
+        '</div>';
+    document.getElementById('purchaseItems').insertAdjacentHTML('beforeend', html);
+    purchaseItemIdx++;
+}
+
+function submitPurchase() {
+    const items = [];
+    document.querySelectorAll('#purchaseItems > div').forEach(function(el) {
+        items.push({
+            medicine_id: parseInt(el.querySelector('.pMedId').value),
+            batch_number: el.querySelector('.pBatchNum').value,
+            expiry_date: el.querySelector('.pExpiry').value,
+            quantity: parseInt(el.querySelector('.pQty').value || '1'),
+            purchase_price: parseFloat(el.querySelector('.pPrice').value || '0'),
+            selling_price: parseFloat(el.querySelector('.pSellPrice').value || el.querySelector('.pPrice').value || '0'),
+        });
+    });
+    const data = {
+        supplier_id: parseInt(document.getElementById('purchaseSupplier').value),
+        invoice_number: document.getElementById('purchaseInvoice').value,
+        purchase_date: document.getElementById('purchaseDate').value,
+        items: items,
+        notes: document.getElementById('purchaseNotes').value,
+    };
+    if (!data.supplier_id || !data.invoice_number || !items.length) {
+        alert('Please fill in supplier, invoice number, and at least one item');
+        return;
+    }
+    api.post('/api/purchases', data).then(function(r) {
+        if (r.error) { alert(r.error); return; }
+        window.location.reload();
+    });
+}
+
+function viewPurchase(id) {
+    api.get('/api/purchases/' + id).then(function(r) {
+        if (r.error) { alert(r.error); return; }
+        document.getElementById('viewPurchaseTitle').textContent = 'Invoice: ' + r.invoice_number;
+        let html = '<div class="summary-row"><span>Supplier</span><span>' + r.supplier_name + '</span></div>';
+        html += '<div class="summary-row"><span>Date</span><span>' + r.purchase_date + '</span></div>';
+        html += '<div class="summary-row"><span>Total</span><span class="font-mono" style="font-weight:700;">Rs ' + r.total_amount.toFixed(2) + '</span></div>';
+        html += '<table style="width:100%; margin-top:12px;"><thead><tr><th>Medicine</th><th>Batch</th><th class="text-right">Qty</th><th class="text-right">Price</th></tr></thead><tbody>';
+        r.items.forEach(function(i) {
+            html += '<tr><td>' + i.medicine_name + '</td><td class="font-mono text-sm">' + i.batch_number + '</td><td class="text-right">' + i.quantity + '</td><td class="text-right font-mono">Rs ' + i.purchase_price.toFixed(2) + '</td></tr>';
+        });
+        html += '</tbody></table>';
+        if (r.notes) html += '<div class="mt-4 text-sm text-muted">Notes: ' + r.notes + '</div>';
+        document.getElementById('viewPurchaseBody').innerHTML = html;
+        openModal('viewPurchaseModal');
+    });
+}
+</script>
+{% endblock %}

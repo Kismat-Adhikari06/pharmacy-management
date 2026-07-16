@@ -21,17 +21,12 @@ class WelcomePage(QWidget):
 
         layout.addStretch()
 
-        emoji = QLabel("\U0001f3e5")
-        emoji.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        emoji.setStyleSheet("font-size: 64pt;")
-        layout.addWidget(emoji)
-
         title = QLabel(config.APP_NAME)
         title.setObjectName("WelcomeTitle")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title)
 
-        subtitle = QLabel(f"Built for Nepal \U0001f1f3\U0001f1f5")
+        subtitle = QLabel("Built for Nepal")
         subtitle.setObjectName("WelcomeSubtitle")
         subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(subtitle)

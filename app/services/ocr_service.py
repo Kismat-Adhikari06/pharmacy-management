@@ -90,12 +90,12 @@ class OCRService:
         if cls._paddle_instance is not None:
             return cls._paddle_instance
         try:
+            import os
+            os.environ.setdefault("PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK", "True")
             from paddleocr import PaddleOCR
             cls._paddle_instance = PaddleOCR(
-                use_angle_cls=True,
                 lang="en",
-                show_log=False,
-                use_gpu=False,
+                use_textline_orientation=True,
             )
             cls._active_engine = OCREngine.PADDLE
             logger.info("PaddleOCR engine initialized.")
@@ -350,7 +350,7 @@ class OCRService:
     @classmethod
     def _run_paddle(cls, engine, img_path: Path, page_num: int) -> PageResult:
         """Run PaddleOCR on an image."""
-        result = engine.ocr(str(img_path), cls=True)
+        result = engine.ocr(str(img_path))
         if result is None or len(result) == 0 or result[0] is None:
             return PageResult(page_number=page_num, text="", confidence=0.0)
 

@@ -18,14 +18,13 @@ from PySide6.QtWidgets import (
 from PySide6.QtWidgets import QPushButton
 
 from app.services.barcode_service import BarcodeService, LabelData
+from app.ui.theme import Theme
 
 logger = logging.getLogger(__name__)
 
-_TEXT = "#cdd6f4"
-_SUBTEXT = "#a6adc8"
-_BLUE = "#89b4fa"
-_GREEN = "#a6e3a1"
-_RED = "#f38ba8"
+_BLUE = "#3B82F6"
+_GREEN = "#22c55e"
+_RED = "#ef4444"
 
 
 class BarcodeLabelDialog(QDialog):
@@ -60,7 +59,7 @@ class BarcodeLabelDialog(QDialog):
         preview_frame.setStyleSheet(
             "#BarcodeLabelPreview {"
             "  background-color: #ffffff;"
-            "  border: 1px solid #45475a;"
+            "  border: 1px solid #475569;"
             "  border-radius: 8px;"
             "  padding: 16px;"
             "}"
@@ -70,20 +69,20 @@ class BarcodeLabelDialog(QDialog):
         preview_layout.setContentsMargins(20, 16, 20, 16)
 
         med_name = QLabel(self._data.medicine_name)
-        med_name.setStyleSheet("color: #1e1e2e; font-size: 12pt; font-weight: bold;")
+        med_name.setStyleSheet("color: #0f172a; font-size: 12pt; font-weight: bold;")
         med_name.setAlignment(Qt.AlignmentFlag.AlignCenter)
         med_name.setWordWrap(True)
         preview_layout.addWidget(med_name)
 
         if self._data.generic_name:
             gen = QLabel(self._data.generic_name)
-            gen.setStyleSheet("color: #45475a; font-size: 9pt;")
+            gen.setStyleSheet("color: #475569; font-size: 9pt;")
             gen.setAlignment(Qt.AlignmentFlag.AlignCenter)
             preview_layout.addWidget(gen)
 
         if self._data.company:
             co = QLabel(self._data.company)
-            co.setStyleSheet("color: #585b70; font-size: 8pt;")
+            co.setStyleSheet(f"color: {Theme.text3()}; font-size: 8pt;")
             co.setAlignment(Qt.AlignmentFlag.AlignCenter)
             preview_layout.addWidget(co)
 
@@ -92,7 +91,7 @@ class BarcodeLabelDialog(QDialog):
         # Barcode visual placeholder (text representation)
         barcode_lbl = QLabel(self._data.barcode or "NO BARCODE")
         barcode_lbl.setStyleSheet(
-            "color: #1e1e2e; font-size: 14pt; font-weight: bold; "
+            "color: #0f172a; font-size: 14pt; font-weight: bold; "
             "font-family: 'Courier New', monospace; letter-spacing: 2px;"
         )
         barcode_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -102,20 +101,20 @@ class BarcodeLabelDialog(QDialog):
         info_row = QHBoxLayout()
         if self._data.selling_price > 0:
             price_lbl = QLabel(f"Rs. {self._data.selling_price:.2f}")
-            price_lbl.setStyleSheet("color: #1e1e2e; font-size: 10pt; font-weight: bold;")
+            price_lbl.setStyleSheet("color: #0f172a; font-size: 10pt; font-weight: bold;")
             info_row.addWidget(price_lbl)
 
         info_row.addStretch()
 
         if self._data.batch_number:
             batch_lbl = QLabel(f"Batch: {self._data.batch_number}")
-            batch_lbl.setStyleSheet("color: #585b70; font-size: 8pt;")
+            batch_lbl.setStyleSheet(f"color: {Theme.text3()}; font-size: 8pt;")
             info_row.addWidget(batch_lbl)
         preview_layout.addLayout(info_row)
 
         if self._data.expiry_date:
             exp_lbl = QLabel(f"Exp: {self._data.expiry_date}")
-            exp_lbl.setStyleSheet("color: #585b70; font-size: 8pt;")
+            exp_lbl.setStyleSheet(f"color: {Theme.text3()}; font-size: 8pt;")
             preview_layout.addWidget(exp_lbl)
 
         layout.addWidget(preview_frame)
@@ -124,7 +123,7 @@ class BarcodeLabelDialog(QDialog):
         count_row = QHBoxLayout()
         count_row.setSpacing(8)
         count_lbl = QLabel("Print Count:")
-        count_lbl.setStyleSheet(f"color: {_SUBTEXT}; font-size: 10pt;")
+        count_lbl.setStyleSheet(f"color: {Theme.text2()}; font-size: 10pt;")
         count_row.addWidget(count_lbl)
 
         self._count_spin = QSpinBox()
@@ -144,7 +143,7 @@ class BarcodeLabelDialog(QDialog):
         cancel_btn.clicked.connect(self.reject)
         btn_row.addWidget(cancel_btn)
 
-        self._print_btn = QPushButton("\U0001f5a8\ufe0f  Print Label")
+        self._print_btn = QPushButton("Print Label")
         self._print_btn.setObjectName("PrimaryButton")
         self._print_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self._print_btn.clicked.connect(self._on_print)

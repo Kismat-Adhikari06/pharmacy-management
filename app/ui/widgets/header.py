@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
 )
 
 from config import config
+from app.ui.widgets.icons import NavIcons
 
 
 class Header(QFrame):
@@ -51,7 +52,11 @@ class Header(QFrame):
         separator2.setObjectName("HeaderText")
         layout.addWidget(separator2)
 
-        user_label = QLabel(f"\U0001f464  {config.CURRENT_USER}")
+        user_icon = QLabel()
+        user_icon.setPixmap(NavIcons.user().pixmap(16, 16))
+        layout.addWidget(user_icon)
+
+        user_label = QLabel(f"  {config.CURRENT_USER}")
         user_label.setObjectName("HeaderText")
         layout.addWidget(user_label)
 

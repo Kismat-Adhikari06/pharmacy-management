@@ -23,6 +23,7 @@ from app.services.receipt_service import ReceiptService
 from app.services.sales_history_service import SalesHistoryService
 from app.ui.dialogs.receipt_preview_dialog import ReceiptPreviewDialog
 from app.ui.pages.base_page import BasePage
+from app.ui.theme import Theme
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +39,7 @@ class SalesHistoryPage(BasePage):
         super().__init__(
             title="Sales History",
             description="View past sales and reprint receipts.",
-            icon="📜",
+            icon="history",
             parent=parent,
         )
 
@@ -60,7 +61,7 @@ class SalesHistoryPage(BasePage):
         toolbar.addStretch()
 
         search_label = QLabel("Search Bill:")
-        search_label.setStyleSheet("color: #a6adc8; font-size: 10pt;")
+        search_label.setStyleSheet(f"color: {Theme.text2()}; font-size: 10pt; background: transparent;")
         toolbar.addWidget(search_label)
 
         self._search_input = QLineEdit()
@@ -90,22 +91,16 @@ class SalesHistoryPage(BasePage):
 
         # ── Table ─────────────────────────────────────────────
         self._table = QTableWidget()
-        self._table.setColumnCount(6)
+        self._table.setColumnCount(5)
         self._table.setHorizontalHeaderLabels(
-            ["Bill Number", "Date", "Items", "Total", "Payment", "ID"]
+            ["Bill Number", "Date", "Total", "Payment", "ID"]
         )
         header = self._table.horizontalHeader()
-        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
-        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)
-        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Fixed)
-        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Fixed)
-        header.setSectionResizeMode(4, QHeaderView.ResizeMode.Fixed)
-        header.setSectionResizeMode(5, QHeaderView.ResizeMode.Hidden)
-        self._table.setColumnWidth(0, 170)
-        self._table.setColumnWidth(1, 140)
-        self._table.setColumnWidth(2, 60)
-        self._table.setColumnWidth(3, 100)
-        self._table.setColumnWidth(4, 100)
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
+        self._table.setColumnHidden(4, True)
         self._table.verticalHeader().setVisible(False)
         self._table.setSelectionBehavior(
             QAbstractItemView.SelectionBehavior.SelectRows
@@ -133,7 +128,7 @@ class SalesHistoryPage(BasePage):
 
         # ── Status ────────────────────────────────────────────
         self._status_label = QLabel("")
-        self._status_label.setStyleSheet("color: #a6adc8; font-size: 9pt;")
+        self._status_label.setStyleSheet(f"color: {Theme.text2()}; font-size: 9pt; background: transparent;")
         layout.addWidget(self._status_label)
 
         self._debounce.timeout.connect(self._execute_search)
@@ -156,12 +151,12 @@ class SalesHistoryPage(BasePage):
         for i, rec in enumerate(records):
             self._table.setItem(i, 0, QTableWidgetItem(rec.bill_number))
             self._table.setItem(i, 1, QTableWidgetItem(rec.sale_date))
-            self._table.setItem(i, 2, self._centered(str(rec.item_count)))
             self._table.setItem(
-                i, 3, self._right_aligned(f"Rs. {rec.total_amount:.2f}")
+                i, 2, self._right_aligned(f"Rs. {rec.total_amount:.2f}")
             )
-            self._table.setItem(i, 4, QTableWidgetItem(rec.payment_method))
-            self._table.setItem(i, 5, self._centered(str(rec.sale_id)))
+            self._table.setItem(i, 3, QTableWidgetItem(rec.payment_method))
+            # Hidden column for sale_id (used for receipt preview)
+            self._table.setItem(i, 4, QTableWidgetItem(str(rec.sale_id)))
 
         self._status_label.setText(f"{len(records)} sale{'s' if len(records) != 1 else ''} found")
 
@@ -194,7 +189,7 @@ class SalesHistoryPage(BasePage):
             return None, None
         row = rows[0].row()
         bill_item = self._table.item(row, 0)
-        id_item = self._table.item(row, 5)
+        id_item = self._table.item(row, 4)
         if bill_item is None or id_item is None:
             return None, None
         try:

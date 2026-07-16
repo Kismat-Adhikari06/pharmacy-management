@@ -4,6 +4,7 @@ import logging
 from datetime import date
 
 from PySide6.QtCore import QTimer, Qt, Signal
+from PySide6.QtGui import QShortcut
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QComboBox,
@@ -38,6 +39,7 @@ from app.services.receipt_service import ReceiptData, ReceiptService
 from app.ui.dialogs.payment_dialog import PaymentDialog
 from app.ui.dialogs.receipt_preview_dialog import ReceiptPreviewDialog
 from app.ui.pages.base_page import BasePage
+from app.ui.theme import Theme
 
 logger = logging.getLogger(__name__)
 
@@ -76,13 +78,13 @@ class BillingPage(BasePage):
             left.setSpacing(2)
 
             name = QLabel(self._med.medicine_name)
-            name.setStyleSheet("font-weight: bold; font-size: 10pt;")
+            name.setStyleSheet("font-weight: bold; font-size: 10pt; background: transparent;")
             left.addWidget(name)
 
             detail = QLabel(
                 f"{self._med.generic_name}  |  {self._med.company}"
             )
-            detail.setStyleSheet("color: #a6adc8; font-size: 9pt;")
+            detail.setStyleSheet(f"color: {Theme.text2()}; font-size: 9pt; background: transparent;")
             left.addWidget(detail)
             row.addLayout(left, stretch=1)
 
@@ -92,13 +94,13 @@ class BillingPage(BasePage):
 
             price = QLabel(f"Rs. {self._med.selling_price:.2f}")
             price.setStyleSheet(
-                "color: #a6e3a1; font-weight: bold; font-size: 10pt;"
+                f"color: {Theme.success()}; font-weight: bold; font-size: 10pt; background: transparent;"
             )
             price.setAlignment(Qt.AlignmentFlag.AlignRight)
             right.addWidget(price)
 
             stock = QLabel(f"Stock: {self._med.total_stock}")
-            stock.setStyleSheet("color: #a6adc8; font-size: 9pt;")
+            stock.setStyleSheet(f"color: {Theme.text2()}; font-size: 9pt; background: transparent;")
             stock.setAlignment(Qt.AlignmentFlag.AlignRight)
             right.addWidget(stock)
             row.addLayout(right)
@@ -188,7 +190,7 @@ class BillingPage(BasePage):
         title_row.addStretch()
 
         self._bill_label = QLabel("")
-        self._bill_label.setStyleSheet("color: #a6adc8; font-size: 9pt;")
+        self._bill_label.setStyleSheet(f"color: {Theme.text2()}; font-size: 9pt; background: transparent;")
         title_row.addWidget(self._bill_label)
 
         right_layout.addLayout(title_row)
@@ -233,10 +235,10 @@ class BillingPage(BasePage):
         sf_layout.setSpacing(4)
 
         self._subtotal_label = self._summary_row(sf_layout, "Subtotal")
-        self._discount_label = self._summary_row(sf_layout, "Discount", color="#f38ba8")
+        self._discount_label = self._summary_row(sf_layout, "Discount", color=Theme.danger())
         self._vat_label = self._summary_row(sf_layout, "VAT (13%)")
         self._total_label = self._summary_row(
-            sf_layout, "Grand Total", bold=True, color="#a6e3a1"
+            sf_layout, "Grand Total", bold=True, color=Theme.success()
         )
         right_layout.addWidget(summary_frame)
 
@@ -283,7 +285,7 @@ class BillingPage(BasePage):
         right_layout.addLayout(btn_row)
 
         # ── Keyboard shortcuts ───────────────────────────────
-        self._search_input.setShortcut("F4")
+        QShortcut("F4", self, activated=self._search_input.setFocus)
         pay_btn.setShortcut("F8")
         self._print_btn.setShortcut("F10")
         self._preview_btn.setShortcut("Ctrl+P")
@@ -301,17 +303,18 @@ class BillingPage(BasePage):
         parent_layout: QVBoxLayout,
         label_text: str,
         bold: bool = False,
-        color: str = "#cdd6f4",
+        color: str = None,
     ) -> QLabel:
+        color = color or Theme.text()
         row = QHBoxLayout()
         lbl = QLabel(label_text)
-        lbl.setStyleSheet(f"color: #a6adc8; font-size: 10pt;")
+        lbl.setStyleSheet(f"color: {Theme.text2()}; font-size: 10pt; background: transparent;")
         row.addWidget(lbl)
         row.addStretch()
         val = QLabel("Rs. 0.00")
         weight = "bold" if bold else "normal"
         val.setStyleSheet(
-            f"color: {color}; font-size: 11pt; font-weight: {weight};"
+            f"color: {color}; font-size: 11pt; font-weight: {weight}; background: transparent;"
         )
         row.addWidget(val)
         parent_layout.addLayout(row)
@@ -504,7 +507,7 @@ class BillingPage(BasePage):
         dlg_layout.addWidget(info)
 
         stock_info = QLabel(f"Available: {max_qty} units")
-        stock_info.setStyleSheet("color: #a6adc8;")
+        stock_info.setStyleSheet(f"color: {Theme.text2()}; background: transparent;")
         dlg_layout.addWidget(stock_info)
 
         qty_row = QHBoxLayout()

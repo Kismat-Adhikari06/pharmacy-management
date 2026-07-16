@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Backup — Pharmacy{% endblock %}
+{% block page_title %}Backup &amp; Restore{% endblock %}
+{% block page_sub %}Protect your data with regular backups{% endblock %}
+
+{% block content %}
+<div class="card mb-4" style="max-width:480px;">
+    <div class="section-title">Create Backup</div>
+    <p class="text-muted text-sm" style="margin-bottom:16px;">Save a copy of your database to the backups folder.</p>
+    <button class="btn btn-primary" onclick="createBackup()">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+        Create Backup Now
+    </button>
+    <div id="backupMsg" class="mt-2"></div>
+</div>
+
+<div class="table-wrapper">
+    <div class="table-header">
+        <div class="table-title">Backup History</div>
+    </div>
+    {% if backups %}
+    <div class="table-scroll">
+        <table>
+            <thead>
+                <tr>
+                    <th>File</th>
+                    <th>Date</th>
+                    <th class="text-right">Size</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in backups %}
+                <tr>
+                    <td class="font-mono text-sm">{{ b.name }}</td>
+                    <td class="text-sm">{{ b.date }}</td>
+                    <td class="text-right text-sm">{{ b.size_mb }} MB</td>
+                    <td>
+                        <div class="action-group">
+                            <a href="{{ url_for('api_backup_download', filename=b.name) }}" class="action-btn" title="Download">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            </a>
+                            <button class="action-btn danger" title="Delete" onclick="deleteBackup('{{ b.path }}', '{{ b.name }}')">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                            </button>
+                            <button class="action-btn" title="Restore" onclick="restoreBackup('{{ b.path }}')">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="table-empty">No backups found. Create your first backup above.</div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function createBackup() {
+    document.getElementById('backupMsg').innerHTML = '<span class="text-muted">Creating backup...</span>';
+    api.post('/api/backup/create', {}).then(function(r) {
+        if (r.error) { document.getElementById('backupMsg').innerHTML = '<span class="text-danger">' + r.error + '</span>'; return; }
+        document.getElementById('backupMsg').innerHTML = '<span class="text-success">Backup created: ' + r.file + '</span>';
+        setTimeout(function() { window.location.reload(); }, 1500);
+    });
+}
+
+function deleteBackup(path, name) {
+    if (!confirm('Delete backup "' + name + '"?')) return;
+    api.post('/api/backup/delete', {path: path}).then(function(r) {
+        if (r.error) { alert(r.error); return; }
+        window.location.reload();
+    });
+}
+
+function restoreBackup(path) {
+    if (!confirm('Restore database from this backup? The current database will be overwritten.')) return;
+    api.post('/api/backup/restore', {path: path}).then(function(r) {
+        if (r.error) { alert(r.error); return; }
+        alert(r.message);
+    });
+}
+</script>
+{% endblock %}

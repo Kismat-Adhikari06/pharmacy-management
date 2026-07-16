@@ -13,6 +13,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from app.ui.theme import Theme
+
 
 class PaymentDialog(QDialog):
     """Dialog for selecting payment method and entering payment details."""
@@ -55,7 +57,7 @@ class PaymentDialog(QDialog):
         form.addRow("Discount:", self._discount_spin)
 
         self._cash_row_label = QLabel("Cash Received:")
-        self._cash_row_label.setStyleSheet("color: #a6adc8; font-size: 10pt;")
+        self._cash_row_label.setStyleSheet(f"color: {Theme.text2()}; font-size: 10pt;")
         self._cash_spin = QDoubleSpinBox()
         self._cash_spin.setRange(0.0, 9999999.0)
         self._cash_spin.setDecimals(2)
@@ -116,14 +118,14 @@ class PaymentDialog(QDialog):
                     f"Remaining:  Rs. {abs(change):.2f}"
                 )
                 self._change_label.setStyleSheet(
-                    "color: #f38ba8; font-size: 11pt; font-weight: bold;"
+                    "color: #ef4444; font-size: 11pt; font-weight: bold;"
                 )
             else:
                 self._change_label.setText(
                     f"Change:  Rs. {change:.2f}"
                 )
                 self._change_label.setStyleSheet(
-                    "color: #a6e3a1; font-size: 11pt; font-weight: bold;"
+                    "color: #22c55e; font-size: 11pt; font-weight: bold;"
                 )
         else:
             self._change_label.setText("")

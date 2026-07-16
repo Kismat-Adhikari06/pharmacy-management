@@ -22,11 +22,10 @@ class PurchasesPage(QWidget):
     """Purchase management page with history table."""
 
     COLUMNS: list[tuple[str, int]] = [
-        ("Invoice", 160),
-        ("Supplier", 200),
-        ("Date", 110),
-        ("Items", 70),
-        ("Total", 130),
+        ("Invoice", 170),
+        ("Supplier", 220),
+        ("Date", 120),
+        ("Total", 140),
     ]
 
     def __init__(self, parent: QWidget | None = None) -> None:
@@ -51,23 +50,17 @@ class PurchasesPage(QWidget):
         toolbar = QHBoxLayout()
         toolbar.setSpacing(8)
 
-        new_btn = QPushButton("\u2795  New Purchase")
-        new_btn.setObjectName("ToolbarButton")
+        new_btn = QPushButton("+ New Purchase")
+        new_btn.setObjectName("PrimaryButton")
         new_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         new_btn.clicked.connect(self._on_new_purchase)
         toolbar.addWidget(new_btn)
-
-        refresh_btn = QPushButton("\U0001f504  Refresh")
-        refresh_btn.setObjectName("ToolbarButton")
-        refresh_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        refresh_btn.clicked.connect(self.refresh_data)
-        toolbar.addWidget(refresh_btn)
 
         toolbar.addStretch()
 
         self._search_edit = QLineEdit()
         self._search_edit.setObjectName("SearchBox")
-        self._search_edit.setPlaceholderText("\U0001f50d  Search invoice...")
+        self._search_edit.setPlaceholderText("Search invoice...")
         self._search_edit.setFixedWidth(260)
         self._search_edit.textChanged.connect(self._on_search_text_changed)
         toolbar.addWidget(self._search_edit)
@@ -89,7 +82,7 @@ class PurchasesPage(QWidget):
         self._table.doubleClicked.connect(self._on_view_detail)
         layout.addWidget(self._table)
 
-        self._empty_label = QLabel("\U0001f4e6\n\nNo purchases found.")
+        self._empty_label = QLabel("No purchases found.")
         self._empty_label.setObjectName("EmptyState")
         self._empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self._empty_label)
@@ -104,11 +97,11 @@ class PurchasesPage(QWidget):
     def _populate_table(self, rows) -> None:
         self._table.setRowCount(len(rows))
         for i, r in enumerate(rows):
+            # Simplified: removed Items column (staff only needs Invoice, Supplier, Date, Total)
             vals = [
                 r.invoice_number,
                 r.supplier_name,
                 r.purchase_date,
-                str(r.item_count),
                 f"Rs. {r.total_amount:.2f}",
             ]
             for j, val in enumerate(vals):
@@ -116,6 +109,8 @@ class PurchasesPage(QWidget):
                 item.setTextAlignment(Qt.AlignmentFlag.AlignVCenter)
                 if j == 0:
                     item.setData(Qt.ItemDataRole.UserRole, r.id)
+                if j == 3:
+                    item.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
                 self._table.setItem(i, j, item)
         has = len(rows) > 0
         self._table.setVisible(has)

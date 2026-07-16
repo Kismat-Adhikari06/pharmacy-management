@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sqlalchemy import Integer, String
+from sqlalchemy import Date, Float, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
@@ -13,10 +13,16 @@ class Supplier(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     supplier_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    contact_person: Mapped[str | None] = mapped_column(String(200))
     phone: Mapped[str | None] = mapped_column(String(20))
     email: Mapped[str | None] = mapped_column(String(200))
     address: Mapped[str | None] = mapped_column(String(500))
     pan_number: Mapped[str | None] = mapped_column(String(20), unique=True)
+    registration_number: Mapped[str | None] = mapped_column(String(50))
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="Active")
+    outstanding_balance: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    last_purchase_date: Mapped[str | None] = mapped_column(Date)
+    total_purchases: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
 
     purchases: Mapped[list["Purchase"]] = relationship(  # noqa: F821
         "Purchase", back_populates="supplier"

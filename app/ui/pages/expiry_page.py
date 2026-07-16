@@ -22,20 +22,10 @@ from PySide6.QtWidgets import (
 )
 
 from app.services.expiry_service import ExpiryBatch, ExpiryService, ExpirySummary
+from app.ui.theme import Theme
 
 logger = logging.getLogger(__name__)
 
-# ── Colour palette (matches dark.qss) ──────────────────────────
-_BG = "#1e1e2e"
-_CARD_BG = "#181825"
-_BORDER = "#313244"
-_TEXT = "#cdd6f4"
-_SUBTEXT = "#a6adc8"
-_BLUE = "#89b4fa"
-_GREEN = "#a6e3a1"
-_YELLOW = "#f9e2af"
-_ORANGE = "#fab387"
-_RED = "#f38ba8"
 
 
 class ExpiryPage(QWidget):
@@ -69,11 +59,11 @@ class ExpiryPage(QWidget):
 
         # ── Header row ─────────────────────────────────────────
         hdr = QHBoxLayout()
-        title = QLabel("⏰ Expiry Management")
+        title = QLabel("Expiry Management")
         title.setObjectName("PageTitle")
         hdr.addWidget(title)
         hdr.addStretch()
-        self._refresh_btn = QPushButton("\U0001f504 Refresh")
+        self._refresh_btn = QPushButton("Refresh")
         self._refresh_btn.setObjectName("ToolbarButton")
         self._refresh_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._refresh_btn.clicked.connect(self.refresh)
@@ -105,7 +95,7 @@ class ExpiryPage(QWidget):
 
         filter_row.addWidget(self._make_label("Status:"))
         self._status_buttons: dict[str, QPushButton] = {}
-        for label in ["All", "🔴 Expired", "🟠 30d", "🟡 60d", "🟢 90d"]:
+        for label in ["All", "Expired", "Critical (30d)", "Warning (60d)", "Good (90d)"]:
             btn = QPushButton(label)
             btn.setCheckable(True)
             btn.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -115,13 +105,13 @@ class ExpiryPage(QWidget):
 
         filter_row.addStretch()
 
-        self._export_csv_btn = QPushButton("📄 Export CSV")
+        self._export_csv_btn = QPushButton("Export CSV")
         self._export_csv_btn.setObjectName("ToolbarButton")
         self._export_csv_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._export_csv_btn.clicked.connect(self._export_csv)
         filter_row.addWidget(self._export_csv_btn)
 
-        self._export_excel_btn = QPushButton("📊 Export Excel")
+        self._export_excel_btn = QPushButton("Export Excel")
         self._export_excel_btn.setObjectName("ToolbarButton")
         self._export_excel_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._export_excel_btn.clicked.connect(self._export_excel)
@@ -135,7 +125,7 @@ class ExpiryPage(QWidget):
 
         # ── Count label ────────────────────────────────────────
         self._count_label = QLabel("Showing 0 items")
-        self._count_label.setStyleSheet(f"color: {_SUBTEXT}; font-size: 9pt;")
+        self._count_label.setStyleSheet(f"color: {Theme.text2()}; font-size: 9pt; background: transparent;")
         self._main_layout.addWidget(self._count_label)
 
         self._main_layout.addStretch()
@@ -149,19 +139,18 @@ class ExpiryPage(QWidget):
     @staticmethod
     def _make_label(text: str) -> QLabel:
         lbl = QLabel(text)
-        lbl.setStyleSheet(f"color: {_SUBTEXT}; font-size: 9pt;")
+        lbl.setStyleSheet(f"color: {Theme.text2()}; font-size: 9pt; background: transparent;")
         return lbl
 
     def _create_table(self) -> QTableWidget:
         table = QTableWidget()
-        table.setColumnCount(9)
+        table.setColumnCount(6)
         table.setHorizontalHeaderLabels([
-            "Status", "Medicine", "Generic", "Company", "Category",
-            "Batch", "Expiry", "Qty", "Selling Price",
+            "Status", "Medicine", "Company", "Batch", "Expiry", "Qty",
         ])
         header = table.horizontalHeader()
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
-        for col in [0, 2, 3, 4, 5, 6, 7, 8]:
+        for col in [0, 2, 3, 4, 5]:
             header.setSectionResizeMode(col, QHeaderView.ResizeMode.ResizeToContents)
         table.verticalHeader().setVisible(False)
         table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
@@ -197,10 +186,10 @@ class ExpiryPage(QWidget):
             filtered = [d for d in filtered if d.company == company]
 
         status_map = {
-            "🔴 Expired": "Expired",
-            "🟠 30d": "Critical",
-            "🟡 60d": "Warning",
-            "🟢 90d": "Caution",
+            "Expired": "Expired",
+            "Critical (30d)": "Critical",
+            "Warning (60d)": "Warning",
+            "Good (90d)": "Caution",
         }
         if self._current_filter in status_map:
             target = status_map[self._current_filter]
@@ -267,10 +256,10 @@ class ExpiryPage(QWidget):
 
         summary = ExpiryService.get_expiry_summary()
         cards = [
-            ("🔴", "Expired", str(summary.expired_count), f"{summary.expired_qty} units", _RED),
-            ("🟠", "≤ 30 Days", str(summary.critical_count), "Critical", _ORANGE),
-            ("🟡", "≤ 60 Days", str(summary.warning_count), "Warning", _YELLOW),
-            ("🟢", "≤ 90 Days", str(summary.caution_count), "Caution", _GREEN),
+            ("!", "Expired", str(summary.expired_count), f"{summary.expired_qty} units", Theme.danger()),
+            ("!", "≤ 30 Days", str(summary.critical_count), "Critical", Theme.warning()),
+            ("!", "≤ 60 Days", str(summary.warning_count), "Warning", Theme.warning()),
+            ("!", "≤ 90 Days", str(summary.caution_count), "Caution", Theme.success()),
         ]
         for i, (icon, label, value, sub, color) in enumerate(cards):
             widget = self._make_stat_card(icon, label, value, sub, color)
@@ -290,11 +279,11 @@ class ExpiryPage(QWidget):
         layout.addWidget(icon_lbl)
 
         val = QLabel(value)
-        val.setStyleSheet(f"font-size: 14pt; font-weight: bold; color: {color};")
+        val.setStyleSheet(f"font-size: 14pt; font-weight: bold; color: {color}; background: transparent;")
         layout.addWidget(val)
 
         lbl = QLabel(f"{label} — {sub}")
-        lbl.setStyleSheet(f"font-size: 9pt; color: {_SUBTEXT};")
+        lbl.setStyleSheet(f"font-size: 9pt; color: {Theme.text2()}; background: transparent;")
         layout.addWidget(lbl)
 
         return wrapper
@@ -306,38 +295,34 @@ class ExpiryPage(QWidget):
             # Status with color
             status_item = QTableWidgetItem(item.status)
             if item.status == "Expired":
-                status_item.setForeground(QColor(_RED))
+                status_item.setForeground(QColor(Theme.danger()))
             elif item.status == "Critical":
-                status_item.setForeground(QColor(_ORANGE))
+                status_item.setForeground(QColor(Theme.warning()))
             elif item.status == "Warning":
-                status_item.setForeground(QColor(_YELLOW))
+                status_item.setForeground(QColor(Theme.warning()))
             else:
-                status_item.setForeground(QColor(_GREEN))
+                status_item.setForeground(QColor(Theme.success()))
             self._table.setItem(i, 0, status_item)
 
             self._table.setItem(i, 1, QTableWidgetItem(item.medicine_name))
-            self._table.setItem(i, 2, QTableWidgetItem(item.generic_name))
-            self._table.setItem(i, 3, QTableWidgetItem(item.company))
-            self._table.setItem(i, 4, QTableWidgetItem(item.category))
-            self._table.setItem(i, 5, QTableWidgetItem(item.batch_number))
+            self._table.setItem(i, 2, QTableWidgetItem(item.company))
+            self._table.setItem(i, 3, QTableWidgetItem(item.batch_number))
 
             exp_item = QTableWidgetItem(item.expiry_date)
             if item.days_until < 0:
-                exp_item.setForeground(QColor(_RED))
+                exp_item.setForeground(QColor(Theme.danger()))
             elif item.days_until <= 30:
-                exp_item.setForeground(QColor(_ORANGE))
+                exp_item.setForeground(QColor(Theme.warning()))
             elif item.days_until <= 60:
-                exp_item.setForeground(QColor(_YELLOW))
+                exp_item.setForeground(QColor(Theme.warning()))
             else:
-                exp_item.setForeground(QColor(_GREEN))
-            self._table.setItem(i, 6, exp_item)
+                exp_item.setForeground(QColor(Theme.success()))
+            self._table.setItem(i, 4, exp_item)
 
             qty_item = _centered(str(item.quantity))
             if item.quantity == 0:
-                qty_item.setForeground(QColor(_RED))
-            self._table.setItem(i, 7, qty_item)
-
-            self._table.setItem(i, 8, _right_aligned(f"Rs. {item.selling_price:,.2f}"))
+                qty_item.setForeground(QColor(Theme.danger()))
+            self._table.setItem(i, 5, qty_item)
 
         self._table.setSortingEnabled(True)
 
@@ -345,8 +330,7 @@ class ExpiryPage(QWidget):
 
     def _get_visible_rows(self) -> tuple[list[str], list[list[str]]]:
         headers = [
-            "Status", "Medicine", "Generic", "Company", "Category",
-            "Batch", "Expiry", "Qty", "Selling Price",
+            "Status", "Medicine", "Company", "Batch", "Expiry", "Qty",
         ]
         rows: list[list[str]] = []
         for r in range(self._table.rowCount()):

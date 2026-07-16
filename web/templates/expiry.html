@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Expiry — Pharmacy{% endblock %}
+{% block page_title %}Expiry Tracker{% endblock %}
+{% block page_sub %}Batches expiring within 90 days{% endblock %}
+
+{% block content %}
+<div class="table-wrapper">
+    <div class="table-header">
+        <div class="table-title">Expiring &amp; Expired Batches</div>
+        <span class="badge badge-warning">{{ batches|length }} items</span>
+    </div>
+    {% if batches %}
+    <div class="table-scroll">
+        <table>
+            <thead>
+                <tr>
+                    <th>Medicine</th>
+                    <th>Batch #</th>
+                    <th>Expiry Date</th>
+                    <th>Days Left</th>
+                    <th>Status</th>
+                    <th class="text-right">Stock</th>
+                    <th class="text-right">Buy Price</th>
+                    <th class="text-right">Sell Price</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in batches %}
+                <tr>
+                    <td style="font-weight:600;">{{ b.medicine.medicine_name if b.medicine else 'N/A' }}</td>
+                    <td class="font-mono text-sm">{{ b.batch_number }}</td>
+                    <td class="text-sm">{{ b.expiry_date.strftime('%Y-%m-%d') }}</td>
+                    <td class="text-sm">
+                        {% if b._days_left < 0 %}
+                            <span class="text-danger">{{ b._days_left|abs }} days ago</span>
+                        {% else %}
+                            {{ b._days_left }} days
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if b._color == 'danger' %}
+                            <span class="badge badge-danger">{{ b._status }}</span>
+                        {% elif b._color == 'warning' %}
+                            <span class="badge badge-warning">{{ b._status }}</span>
+                        {% else %}
+                            <span class="badge badge-info">{{ b._status }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-right">{{ b.quantity }}</td>
+                    <td class="text-right font-mono text-sm">Rs {{ "{:,.2f}".format(b.purchase_price) }}</td>
+                    <td class="text-right font-mono text-sm">Rs {{ "{:,.2f}".format(b.selling_price) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="table-empty">No expiring or expired batches found</div>
+    {% endif %}
+</div>
+{% endblock %}

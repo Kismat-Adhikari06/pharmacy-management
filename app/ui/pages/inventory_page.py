@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import Qt, QTimer
+from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import (
     QDialog,
     QFrame,
@@ -31,31 +32,35 @@ from app.services.batch_service import (
 from app.services.barcode_service import BarcodeService
 from app.ui.dialogs.medicine_dialog import MedicineDialog
 from app.ui.dialogs.batch_dialog import BatchDialog
+from app.ui.theme import Theme
+
+
+def _make_icon_button(text: str, object_name: str) -> QPushButton:
+    btn = QPushButton(text)
+    btn.setObjectName(object_name)
+    btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+    btn.setFixedSize(28, 24)
+    return btn
 
 
 class InventoryPage(QWidget):
     """Full inventory page: medicine table (top) + batch table (bottom)."""
 
     MED_COLUMNS: list[tuple[str, int]] = [
-        ("Medicine Name", 200),
-        ("Generic Name", 140),
-        ("Company", 140),
-        ("Category", 110),
-        ("Barcode", 120),
-        ("Rack", 70),
-        ("Min Stock", 75),
-        ("Stock", 70),
-        ("Created", 95),
-        ("Updated", 95),
+        ("Medicine Name", 280),
+        ("Company", 200),
+        ("Min Stock", 100),
+        ("Stock", 100),
+        ("", 70),
     ]
 
     BATCH_COLUMNS: list[tuple[str, int]] = [
-        ("Batch Number", 140),
-        ("Expiry Date", 110),
-        ("Purchase Price", 120),
-        ("Selling Price", 120),
-        ("Quantity", 80),
-        ("Status", 110),
+        ("Batch Number", 160),
+        ("Expiry Date", 130),
+        ("Selling Price", 130),
+        ("Quantity", 100),
+        ("Status", 130),
+        ("", 70),
     ]
 
     def __init__(self, parent: QWidget | None = None) -> None:
@@ -114,47 +119,17 @@ class InventoryPage(QWidget):
         toolbar = QHBoxLayout()
         toolbar.setSpacing(8)
 
-        add_btn = QPushButton("\u2795  Add Medicine")
-        add_btn.setObjectName("ToolbarButton")
+        add_btn = QPushButton("+ Add Medicine")
+        add_btn.setObjectName("PrimaryButton")
         add_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         add_btn.clicked.connect(self._on_add_medicine)
         toolbar.addWidget(add_btn)
-
-        edit_btn = QPushButton("\u270f\ufe0f  Edit")
-        edit_btn.setObjectName("ToolbarButton")
-        edit_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        edit_btn.clicked.connect(self._on_edit_medicine)
-        toolbar.addWidget(edit_btn)
-
-        delete_btn = QPushButton("\U0001f5d1\ufe0f  Delete")
-        delete_btn.setObjectName("ToolbarButton")
-        delete_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        delete_btn.clicked.connect(self._on_delete_medicine)
-        toolbar.addWidget(delete_btn)
-
-        refresh_btn = QPushButton("\U0001f504  Refresh")
-        refresh_btn.setObjectName("ToolbarButton")
-        refresh_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        refresh_btn.clicked.connect(self.refresh_medicines)
-        toolbar.addWidget(refresh_btn)
-
-        barcode_btn = QPushButton("\U0001f4d1  Generate Barcode")
-        barcode_btn.setObjectName("ToolbarButton")
-        barcode_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        barcode_btn.clicked.connect(self._on_generate_barcode)
-        toolbar.addWidget(barcode_btn)
-
-        label_btn = QPushButton("\U0001f5a8\ufe0f  Print Label")
-        label_btn.setObjectName("ToolbarButton")
-        label_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        label_btn.clicked.connect(self._on_print_label)
-        toolbar.addWidget(label_btn)
 
         toolbar.addStretch()
 
         self._search_edit = QLineEdit()
         self._search_edit.setObjectName("SearchBox")
-        self._search_edit.setPlaceholderText("\U0001f50d  Search medicines...")
+        self._search_edit.setPlaceholderText("Search medicines...")
         self._search_edit.setFixedWidth(280)
         self._search_edit.textChanged.connect(self._on_search_text_changed)
         toolbar.addWidget(self._search_edit)
@@ -180,7 +155,7 @@ class InventoryPage(QWidget):
         parent.addWidget(self._med_table)
 
     def _build_med_empty(self, parent: QVBoxLayout) -> None:
-        self._med_empty = QLabel("\U0001f4e6\n\nNo medicines found.")
+        self._med_empty = QLabel("No medicines found.")
         self._med_empty.setObjectName("EmptyState")
         self._med_empty.setAlignment(Qt.AlignmentFlag.AlignCenter)
         parent.addWidget(self._med_empty)
@@ -188,7 +163,7 @@ class InventoryPage(QWidget):
     def _build_batch_header(self, parent: QVBoxLayout) -> None:
         sep = QFrame()
         sep.setFrameShape(QFrame.Shape.HLine)
-        sep.setStyleSheet("color: #313244;")
+        sep.setStyleSheet(f"color: {Theme.border()};")
         parent.addWidget(sep)
 
         header_row = QHBoxLayout()
@@ -205,25 +180,13 @@ class InventoryPage(QWidget):
         toolbar = QHBoxLayout()
         toolbar.setSpacing(8)
 
-        add_btn = QPushButton("\u2795  Add Batch")
+        add_btn = QPushButton("Add Batch")
         add_btn.setObjectName("ToolbarButton")
         add_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         add_btn.clicked.connect(self._on_add_batch)
         toolbar.addWidget(add_btn)
 
-        edit_btn = QPushButton("\u270f\ufe0f  Edit")
-        edit_btn.setObjectName("ToolbarButton")
-        edit_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        edit_btn.clicked.connect(self._on_edit_batch)
-        toolbar.addWidget(edit_btn)
-
-        delete_btn = QPushButton("\U0001f5d1\ufe0f  Delete")
-        delete_btn.setObjectName("ToolbarButton")
-        delete_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        delete_btn.clicked.connect(self._on_delete_batch)
-        toolbar.addWidget(delete_btn)
-
-        refresh_btn = QPushButton("\U0001f504  Refresh")
+        refresh_btn = QPushButton("Refresh")
         refresh_btn.setObjectName("ToolbarButton")
         refresh_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         refresh_btn.clicked.connect(self._refresh_batches)
@@ -258,7 +221,6 @@ class InventoryPage(QWidget):
     # ------------------------------------------------------------------
 
     def refresh_medicines(self) -> None:
-        """Reload all medicines from the database."""
         search_term = self._search_edit.text().strip()
         if search_term:
             rows = InventoryService.search(search_term)
@@ -272,22 +234,42 @@ class InventoryPage(QWidget):
         for i, row in enumerate(rows):
             values = [
                 row.medicine_name,
-                row.generic_name,
-                row.company,
-                row.category,
-                row.barcode,
-                row.rack_location,
+                row.company or "",
                 str(row.minimum_stock),
                 str(row.total_stock),
-                row.created_at,
-                row.updated_at,
             ]
             for j, val in enumerate(values):
                 item = QTableWidgetItem(val)
                 item.setTextAlignment(Qt.AlignmentFlag.AlignVCenter)
                 if j == 0:
                     item.setData(Qt.ItemDataRole.UserRole, row.id)
+                if j == 3 and row.total_stock <= row.minimum_stock:
+                    color = Theme.warning() if row.total_stock > 0 else Theme.danger()
+                    item.setForeground(Qt.QColor(color))
                 self._med_table.setItem(i, j, item)
+
+            actions_widget = QWidget()
+            actions_layout = QHBoxLayout(actions_widget)
+            actions_layout.setContentsMargins(4, 2, 4, 2)
+            actions_layout.setSpacing(4)
+            actions_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+            edit_btn = _make_icon_button("\u270e", "ActionEditBtn")
+            edit_btn.setToolTip("Edit medicine")
+            edit_btn.clicked.connect(
+                lambda _, mid=row.id: self._on_edit_medicine_by_id(mid)
+            )
+            actions_layout.addWidget(edit_btn)
+
+            del_btn = _make_icon_button("\u2715", "ActionDeleteBtn")
+            del_btn.setToolTip("Delete medicine")
+            del_btn.clicked.connect(
+                lambda _, mid=row.id, name=row.medicine_name: self._on_delete_medicine_by_id(mid, name)
+            )
+            actions_layout.addWidget(del_btn)
+
+            self._med_table.setCellWidget(i, len(self.MED_COLUMNS) - 1, actions_widget)
+
         self._med_table.setSortingEnabled(True)
 
         has_rows = len(rows) > 0
@@ -312,7 +294,6 @@ class InventoryPage(QWidget):
             values = [
                 b.batch_number,
                 b.expiry_date,
-                f"Rs. {b.purchase_price:.2f}",
                 f"Rs. {b.selling_price:.2f}",
                 str(b.quantity),
                 b.status,
@@ -322,14 +303,36 @@ class InventoryPage(QWidget):
                 item.setTextAlignment(Qt.AlignmentFlag.AlignVCenter)
                 if j == 0:
                     item.setData(Qt.ItemDataRole.UserRole, b.id)
-                if j == 5:
+                if j == 4:
                     if b.status == "Expired":
-                        item.setForeground(Qt.GlobalColor.red)
+                        item.setForeground(Qt.QColor(Theme.danger()))
                     elif b.status == "Expiring Soon":
-                        item.setForeground(Qt.GlobalColor.yellow)
+                        item.setForeground(Qt.QColor(Theme.warning()))
                     else:
-                        item.setForeground(Qt.GlobalColor.green)
+                        item.setForeground(Qt.QColor(Theme.success()))
                 self._batch_table.setItem(i, j, item)
+
+            actions_widget = QWidget()
+            actions_layout = QHBoxLayout(actions_widget)
+            actions_layout.setContentsMargins(4, 2, 4, 2)
+            actions_layout.setSpacing(4)
+            actions_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+            edit_btn = _make_icon_button("\u270e", "ActionEditBtn")
+            edit_btn.setToolTip("Edit batch")
+            edit_btn.clicked.connect(
+                lambda _, bid=b.id: self._on_edit_batch_by_id(bid)
+            )
+            actions_layout.addWidget(edit_btn)
+
+            del_btn = _make_icon_button("\u2715", "ActionDeleteBtn")
+            del_btn.setToolTip("Delete batch")
+            del_btn.clicked.connect(
+                lambda _, bid=b.id, bnum=b.batch_number: self._on_delete_batch_by_id(bid, bnum)
+            )
+            actions_layout.addWidget(del_btn)
+
+            self._batch_table.setCellWidget(i, len(self.BATCH_COLUMNS) - 1, actions_widget)
 
         has_rows = len(batches) > 0
         self._batch_table.setVisible(has_rows)
@@ -348,16 +351,6 @@ class InventoryPage(QWidget):
     # ------------------------------------------------------------------
     # Medicine Selection
     # ------------------------------------------------------------------
-
-    def _selected_med_id(self) -> int | None:
-        rows = self._med_table.selectionModel().selectedRows()
-        if not rows:
-            return None
-        row = rows[0].row()
-        item = self._med_table.item(row, 0)
-        if item is None:
-            return None
-        return item.data(Qt.ItemDataRole.UserRole)
 
     def _on_medicine_selected(self, row: int, _col: int, _prev: int, _prev_col: int) -> None:
         med_id = self._med_table.item(row, 0)
@@ -388,11 +381,18 @@ class InventoryPage(QWidget):
             QMessageBox.critical(self, "Error", f"Failed to add medicine:\n{exc}")
 
     def _on_edit_medicine(self) -> None:
-        med_id = self._selected_med_id()
-        if med_id is None:
-            QMessageBox.information(self, "No Selection", "Please select a medicine to edit.")
+        rows = self._med_table.selectionModel().selectedRows()
+        if not rows:
             return
+        row = rows[0].row()
+        item = self._med_table.item(row, 0)
+        if item is None:
+            return
+        med_id = item.data(Qt.ItemDataRole.UserRole)
+        if med_id is not None:
+            self._on_edit_medicine_by_id(med_id)
 
+    def _on_edit_medicine_by_id(self, med_id: int) -> None:
         session = None
         try:
             from app.database.engine import new_session
@@ -437,15 +437,19 @@ class InventoryPage(QWidget):
             QMessageBox.critical(self, "Error", f"Failed to update medicine:\n{exc}")
 
     def _on_delete_medicine(self) -> None:
-        med_id = self._selected_med_id()
-        if med_id is None:
-            QMessageBox.information(self, "No Selection", "Please select a medicine to delete.")
+        rows = self._med_table.selectionModel().selectedRows()
+        if not rows:
             return
+        row = rows[0].row()
+        item = self._med_table.item(row, 0)
+        if item is None:
+            return
+        med_id = item.data(Qt.ItemDataRole.UserRole)
+        med_name = item.text()
+        if med_id is not None:
+            self._on_delete_medicine_by_id(med_id, med_name)
 
-        row = self._med_table.selectionModel().selectedRows()[0].row()
-        name_item = self._med_table.item(row, 0)
-        med_name = name_item.text() if name_item else "this medicine"
-
+    def _on_delete_medicine_by_id(self, med_id: int, med_name: str) -> None:
         reply = QMessageBox.question(
             self,
             "Confirm Delete",
@@ -498,11 +502,18 @@ class InventoryPage(QWidget):
             QMessageBox.critical(self, "Error", f"Failed to add batch:\n{exc}")
 
     def _on_edit_batch(self) -> None:
-        batch_id = self._selected_batch_id()
-        if batch_id is None:
-            QMessageBox.information(self, "No Selection", "Please select a batch to edit.")
+        rows = self._batch_table.selectionModel().selectedRows()
+        if not rows:
             return
+        row = rows[0].row()
+        item = self._batch_table.item(row, 0)
+        if item is None:
+            return
+        batch_id = item.data(Qt.ItemDataRole.UserRole)
+        if batch_id is not None:
+            self._on_edit_batch_by_id(batch_id)
 
+    def _on_edit_batch_by_id(self, batch_id: int) -> None:
         session = None
         try:
             from app.database.engine import new_session
@@ -544,15 +555,19 @@ class InventoryPage(QWidget):
             QMessageBox.critical(self, "Error", f"Failed to update batch:\n{exc}")
 
     def _on_delete_batch(self) -> None:
-        batch_id = self._selected_batch_id()
-        if batch_id is None:
-            QMessageBox.information(self, "No Selection", "Please select a batch to delete.")
+        rows = self._batch_table.selectionModel().selectedRows()
+        if not rows:
             return
+        row = rows[0].row()
+        item = self._batch_table.item(row, 0)
+        if item is None:
+            return
+        batch_id = item.data(Qt.ItemDataRole.UserRole)
+        batch_name = item.text()
+        if batch_id is not None:
+            self._on_delete_batch_by_id(batch_id, batch_name)
 
-        row = self._batch_table.selectionModel().selectedRows()[0].row()
-        batch_item = self._batch_table.item(row, 0)
-        batch_name = batch_item.text() if batch_item else "this batch"
-
+    def _on_delete_batch_by_id(self, batch_id: int, batch_name: str) -> None:
         reply = QMessageBox.question(
             self,
             "Confirm Delete",
@@ -574,23 +589,12 @@ class InventoryPage(QWidget):
         except Exception as exc:
             QMessageBox.critical(self, "Error", f"Failed to delete batch:\n{exc}")
 
-    def _selected_batch_id(self) -> int | None:
-        rows = self._batch_table.selectionModel().selectedRows()
-        if not rows:
-            return None
-        row = rows[0].row()
-        item = self._batch_table.item(row, 0)
-        if item is None:
-            return None
-        return item.data(Qt.ItemDataRole.UserRole)
-
     # ------------------------------------------------------------------
     # Barcode Actions
     # ------------------------------------------------------------------
 
     def _on_generate_barcode(self) -> None:
-        """Generate a barcode for the selected medicine."""
-        med_id = self._selected_med_id()
+        med_id = self._selected_medicine_id
         if med_id is None:
             QMessageBox.information(self, "No Selection", "Please select a medicine.")
             return
@@ -638,8 +642,7 @@ class InventoryPage(QWidget):
                 session.close()
 
     def _on_print_label(self) -> None:
-        """Print a barcode label for the selected medicine."""
-        med_id = self._selected_med_id()
+        med_id = self._selected_medicine_id
         if med_id is None:
             QMessageBox.information(self, "No Selection", "Please select a medicine.")
             return

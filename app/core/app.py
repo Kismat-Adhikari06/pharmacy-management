@@ -82,6 +82,15 @@ class Application:
                 qss = qss_path.read_text(encoding="utf-8")
                 self._app.setStyleSheet(qss)
 
+    def reload_stylesheet(self) -> None:
+        """Re-read the current theme setting and apply the stylesheet."""
+        from app.services.settings_service import SettingsService
+        self._settings = SettingsService.load()
+        self._load_stylesheet()
+        size = _FONT_SIZES.get(self._settings.font_size, 10)
+        self._app.setFont(QFont("Segoe UI", size))
+        logger.info("Theme reloaded: %s", self._settings.default_theme)
+
     def run(self) -> int:
         """Show the main window and enter the event loop."""
         self._window = MainWindow()
@@ -125,19 +134,19 @@ class Application:
             count = len(warnings["expired"])
             items = "\n".join(warnings["expired"][:10])
             more = f"\n... and {count - 10} more" if count > 10 else ""
-            parts.append(f"🔴 EXPIRED ({count} items):\n{items}{more}")
+            parts.append(f"EXPIRED ({count} items):\n{items}{more}")
 
         if warnings["expiring_30"] and self._settings.enable_expiry_warnings == "Yes":
             count = len(warnings["expiring_30"])
             items = "\n".join(warnings["expiring_30"][:10])
             more = f"\n... and {count - 10} more" if count > 10 else ""
-            parts.append(f"🟠 EXPIRING WITHIN {self._settings.expiry_warning_days} DAYS ({count} items):\n{items}{more}")
+            parts.append(f"EXPIRING WITHIN {self._settings.expiry_warning_days} DAYS ({count} items):\n{items}{more}")
 
         if warnings["low_stock"] and self._settings.enable_low_stock_warnings == "Yes":
             count = len(warnings["low_stock"])
             items = "\n".join(warnings["low_stock"][:10])
             more = f"\n... and {count - 10} more" if count > 10 else ""
-            parts.append(f"📉 LOW STOCK ({count} items):\n{items}{more}")
+            parts.append(f"LOW STOCK ({count} items):\n{items}{more}")
 
         if not parts:
             return

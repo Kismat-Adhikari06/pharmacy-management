@@ -693,3 +693,66 @@ Complete backup and restore system with manual/automatic backups, ZIP compressio
 - Added `#AIAnalyzeButton` style (purple theme, hover/pressed/disabled states)
 - Added `#AIResultsFrame` style for AI results container
 - Added `#AIItemsTable` style for editable items table
+
+### Task 18 — Professional Supplier Management
+
+#### Database Model (`app/models/supplier.py`)
+- Added `contact_person` column (String 200, nullable)
+- Added `registration_number` column (String 50, nullable)
+- Added `status` column (String 20, default "Active")
+- Added `outstanding_balance` column (Float, default 0.0)
+- Added `last_purchase_date` column (Date, nullable)
+- Added `total_purchases` column (Float, default 0.0)
+- Automatic schema migration via `_migrate_columns()` on startup
+
+#### Supplier Service (`app/services/supplier_service.py`)
+- **SupplierResult** DTO: expanded with all new fields (contact_person, registration_number, status, outstanding_balance, last_purchase_date, total_purchases)
+- **SupplierDetail** DTO: full detail with purchase history and aggregated stats
+- **SupplierPurchaseRow** DTO: single purchase row for detail view
+- **get_detail(supplier_id)**: returns purchase history, total orders, total amount, average purchase value, last invoice
+- **get_filtered(status, query)**: filter by Active/Inactive status with optional search
+- **export_csv(path)**: exports all suppliers to CSV with all columns
+- **export_excel(path)**: exports all suppliers to Excel-compatible XML spreadsheet
+- **validate_phone(phone)**: regex validation for phone format (7-20 digits with +, -, (, ))
+- **validate_email(email)**: regex validation for email format
+- **validate(data)**: runs all validations on supplier data dict
+- **create()**: now checks duplicate PAN in addition to duplicate name; supports all new fields
+- **update()**: now checks duplicate PAN excluding self; supports all new fields
+- **search()**: now searches across contact_person and registration_number in addition to existing fields
+
+#### Supplier Dialog (`app/ui/dialogs/supplier_dialog.py`)
+- Added Contact Person field
+- Added Registration Number field
+- Added Status dropdown (Active/Inactive)
+- Added Outstanding Balance spinner (Rs. prefix)
+- Added scroll area for dialog content
+- Added phone number validation on save
+- Added email validation on save
+- Minimum size increased to 520x480
+
+#### Supplier Detail Dialog (`app/ui/dialogs/supplier_detail_dialog.py`) — NEW
+- Full supplier info display with contact details, PAN, registration, status
+- Outstanding balance highlighted in yellow when > 0
+- Status shown in green (Active) or red (Inactive)
+- 4 stat cards: Total Orders, Total Purchased, Avg Purchase Value, Last Invoice
+- Purchase history table with Invoice #, Date, Items, Total Amount
+- Sortable, alternating row colors, responsive column sizing
+
+#### Suppliers Page (`app/ui/pages/suppliers_page.py`)
+- Expanded table: 11 columns (Supplier Name, Contact Person, Phone, Email, Address, PAN, Reg. Number, Status, Outstanding, Last Purchase, Total Purchases)
+- Status column color-coded: green for Active, red for Inactive
+- Amount columns right-aligned with Rs. prefix
+- Status filter dropdown (All / Active / Inactive)
+- Export CSV button
+- Export Excel button
+- Double-click opens Supplier Detail dialog
+- Row count display at bottom
+- Add Supplier button uses PrimaryButton style
+- Handles SupplierValidationError in add/edit flows
+
+#### Validation
+- Duplicate supplier name prevention (case-insensitive)
+- Duplicate PAN number prevention
+- Phone number regex validation (7-20 chars, digits + allowed symbols)
+- Email regex validation (standard format check)
+- Validation errors shown as user-friendly warnings

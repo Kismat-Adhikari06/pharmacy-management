@@ -21,20 +21,9 @@ from PySide6.QtWidgets import (
 )
 
 from app.services.expiry_service import ExpiryService, LowStockItem, LowStockSummary
+from app.ui.theme import Theme
 
 logger = logging.getLogger(__name__)
-
-# ── Colour palette (matches dark.qss) ──────────────────────────
-_BG = "#1e1e2e"
-_CARD_BG = "#181825"
-_BORDER = "#313244"
-_TEXT = "#cdd6f4"
-_SUBTEXT = "#a6adc8"
-_BLUE = "#89b4fa"
-_GREEN = "#a6e3a1"
-_YELLOW = "#f9e2af"
-_ORANGE = "#fab387"
-_RED = "#f38ba8"
 
 
 class LowStockPage(QWidget):
@@ -67,11 +56,11 @@ class LowStockPage(QWidget):
 
         # ── Header row ─────────────────────────────────────────
         hdr = QHBoxLayout()
-        title = QLabel("📉 Low Stock Alerts")
+        title = QLabel("Low Stock Alerts")
         title.setObjectName("PageTitle")
         hdr.addWidget(title)
         hdr.addStretch()
-        self._refresh_btn = QPushButton("\U0001f504 Refresh")
+        self._refresh_btn = QPushButton("Refresh")
         self._refresh_btn.setObjectName("ToolbarButton")
         self._refresh_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._refresh_btn.clicked.connect(self.refresh)
@@ -102,7 +91,7 @@ class LowStockPage(QWidget):
         filter_row.addSpacing(16)
 
         filter_row.addWidget(self._make_label("Quick:"))
-        self._out_of_stock_btn = QPushButton("🔴 Out of Stock Only")
+        self._out_of_stock_btn = QPushButton("Out of Stock Only")
         self._out_of_stock_btn.setCheckable(True)
         self._out_of_stock_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._out_of_stock_btn.clicked.connect(self._toggle_out_of_stock)
@@ -110,13 +99,13 @@ class LowStockPage(QWidget):
 
         filter_row.addStretch()
 
-        self._export_csv_btn = QPushButton("📄 Export CSV")
+        self._export_csv_btn = QPushButton("Export CSV")
         self._export_csv_btn.setObjectName("ToolbarButton")
         self._export_csv_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._export_csv_btn.clicked.connect(self._export_csv)
         filter_row.addWidget(self._export_csv_btn)
 
-        self._export_excel_btn = QPushButton("📊 Export Excel")
+        self._export_excel_btn = QPushButton("Export Excel")
         self._export_excel_btn.setObjectName("ToolbarButton")
         self._export_excel_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._export_excel_btn.clicked.connect(self._export_excel)
@@ -130,7 +119,7 @@ class LowStockPage(QWidget):
 
         # ── Count label ────────────────────────────────────────
         self._count_label = QLabel("Showing 0 items")
-        self._count_label.setStyleSheet(f"color: {_SUBTEXT}; font-size: 9pt;")
+        self._count_label.setStyleSheet(f"color: {Theme.text2()}; font-size: 9pt; background: transparent;")
         self._main_layout.addWidget(self._count_label)
 
         self._main_layout.addStretch()
@@ -142,19 +131,18 @@ class LowStockPage(QWidget):
     @staticmethod
     def _make_label(text: str) -> QLabel:
         lbl = QLabel(text)
-        lbl.setStyleSheet(f"color: {_SUBTEXT}; font-size: 9pt;")
+        lbl.setStyleSheet(f"color: {Theme.text2()}; font-size: 9pt; background: transparent;")
         return lbl
 
     def _create_table(self) -> QTableWidget:
         table = QTableWidget()
-        table.setColumnCount(8)
+        table.setColumnCount(5)
         table.setHorizontalHeaderLabels([
-            "Medicine", "Generic", "Company", "Category",
-            "Current Stock", "Min Stock", "Deficit", "Latest Supplier",
+            "Medicine", "Company", "Current Stock", "Min Stock", "Deficit",
         ])
         header = table.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
-        for col in [1, 2, 3, 4, 5, 6, 7]:
+        for col in [1, 2, 3, 4]:
             header.setSectionResizeMode(col, QHeaderView.ResizeMode.ResizeToContents)
         table.verticalHeader().setVisible(False)
         table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
@@ -247,9 +235,9 @@ class LowStockPage(QWidget):
 
         summary = ExpiryService.get_low_stock_summary()
         cards = [
-            ("📉", "Total Low Stock", str(summary.total_items), "Medicines below minimum", _ORANGE),
-            ("🔴", "Out of Stock", str(summary.out_of_stock), "Zero units available", _RED),
-            ("🟠", "Low Stock", str(summary.low_stock), "Below minimum but > 0", _YELLOW),
+            ("!", "Total Low Stock", str(summary.total_items), "Medicines below minimum", Theme.warning()),
+            ("!", "Out of Stock", str(summary.out_of_stock), "Zero units available", Theme.danger()),
+            ("!", "Low Stock", str(summary.low_stock), "Below minimum but > 0", Theme.warning()),
         ]
         for i, (icon, label, value, sub, color) in enumerate(cards):
             widget = self._make_stat_card(icon, label, value, sub, color)
@@ -269,11 +257,11 @@ class LowStockPage(QWidget):
         layout.addWidget(icon_lbl)
 
         val = QLabel(value)
-        val.setStyleSheet(f"font-size: 14pt; font-weight: bold; color: {color};")
+        val.setStyleSheet(f"font-size: 14pt; font-weight: bold; color: {color}; background: transparent;")
         layout.addWidget(val)
 
         lbl = QLabel(f"{label} — {sub}")
-        lbl.setStyleSheet(f"font-size: 9pt; color: {_SUBTEXT};")
+        lbl.setStyleSheet(f"font-size: 9pt; color: {Theme.text2()}; background: transparent;")
         layout.addWidget(lbl)
 
         return wrapper
@@ -283,24 +271,20 @@ class LowStockPage(QWidget):
         self._table.setRowCount(len(items))
         for i, item in enumerate(items):
             self._table.setItem(i, 0, QTableWidgetItem(item.medicine_name))
-            self._table.setItem(i, 1, QTableWidgetItem(item.generic_name))
-            self._table.setItem(i, 2, QTableWidgetItem(item.company))
-            self._table.setItem(i, 3, QTableWidgetItem(item.category))
+            self._table.setItem(i, 1, QTableWidgetItem(item.company))
 
             stock_item = _centered(str(item.current_stock))
             if item.current_stock == 0:
-                stock_item.setForeground(QColor(_RED))
+                stock_item.setForeground(QColor(Theme.danger()))
             else:
-                stock_item.setForeground(QColor(_ORANGE))
-            self._table.setItem(i, 4, stock_item)
+                stock_item.setForeground(QColor(Theme.warning()))
+            self._table.setItem(i, 2, stock_item)
 
-            self._table.setItem(i, 5, _centered(str(item.minimum_stock)))
+            self._table.setItem(i, 3, _centered(str(item.minimum_stock)))
 
             deficit_item = _centered(str(item.difference))
-            deficit_item.setForeground(QColor(_RED))
-            self._table.setItem(i, 6, deficit_item)
-
-            self._table.setItem(i, 7, QTableWidgetItem(item.latest_supplier))
+            deficit_item.setForeground(QColor(Theme.danger()))
+            self._table.setItem(i, 4, deficit_item)
 
         self._table.setSortingEnabled(True)
 
@@ -308,8 +292,7 @@ class LowStockPage(QWidget):
 
     def _get_visible_rows(self) -> tuple[list[str], list[list[str]]]:
         headers = [
-            "Medicine", "Generic", "Company", "Category",
-            "Current Stock", "Min Stock", "Deficit", "Latest Supplier",
+            "Medicine", "Company", "Current Stock", "Min Stock", "Deficit",
         ]
         rows: list[list[str]] = []
         for r in range(self._table.rowCount()):

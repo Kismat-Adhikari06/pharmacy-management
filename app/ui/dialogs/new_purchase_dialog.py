@@ -82,7 +82,7 @@ class NewPurchaseDialog(QDialog):
         dup_row_btn.clicked.connect(self._duplicate_row)
         item_toolbar.addWidget(dup_row_btn)
 
-        del_row_btn = QPushButton("\U0001f5d1\ufe0f  Delete Row")
+        del_row_btn = QPushButton("Delete Row")
         del_row_btn.setObjectName("ToolbarButton")
         del_row_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         del_row_btn.clicked.connect(self._delete_row)

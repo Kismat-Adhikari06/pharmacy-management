@@ -29,19 +29,9 @@ from PySide6.QtWidgets import (
 
 from app.services.backup_service import BackupEntry, BackupService
 from app.services.settings_service import SettingsService
+from app.ui.theme import Theme
 
 logger = logging.getLogger(__name__)
-
-# ── Colour palette (matches dark.qss) ──────────────────────────
-_TEXT = "#cdd6f4"
-_SUBTEXT = "#a6adc8"
-_BLUE = "#89b4fa"
-_GREEN = "#a6e3a1"
-_YELLOW = "#f9e2af"
-_ORANGE = "#fab387"
-_RED = "#f38ba8"
-_BORDER = "#313244"
-_CARD_BG = "#181825"
 
 
 class BackupPage(QWidget):
@@ -74,11 +64,11 @@ class BackupPage(QWidget):
 
         # ── Header ─────────────────────────────────────────────
         hdr = QHBoxLayout()
-        title = QLabel("\U0001f4be Backup & Restore")
+        title = QLabel("Backup & Restore")
         title.setObjectName("PageTitle")
         hdr.addWidget(title)
         hdr.addStretch()
-        self._refresh_btn = QPushButton("\U0001f504 Refresh")
+        self._refresh_btn = QPushButton("Refresh")
         self._refresh_btn.setObjectName("ToolbarButton")
         self._refresh_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self._refresh_btn.clicked.connect(self._load_history)
@@ -96,7 +86,7 @@ class BackupPage(QWidget):
 
         # ── Status label ───────────────────────────────────────
         self._status_label = QLabel("")
-        self._status_label.setStyleSheet(f"color: {_SUBTEXT}; font-size: 9pt;")
+        self._status_label.setStyleSheet(f"color: {Theme.text2()}; font-size: 9pt; background: transparent;")
         self._main_layout.addWidget(self._status_label)
 
         # ── Backup History ─────────────────────────────────────
@@ -121,30 +111,30 @@ class BackupPage(QWidget):
         layout.setContentsMargins(16, 14, 16, 14)
         layout.setSpacing(10)
 
-        hdr = QLabel("\U0001f4e6 Create Backup")
-        hdr.setStyleSheet(f"font-size: 12pt; font-weight: bold; color: {_TEXT};")
+        hdr = QLabel("Create Backup")
+        hdr.setStyleSheet(f"font-size: 12pt; font-weight: bold; color: {Theme.text()}; background: transparent;")
         layout.addWidget(hdr)
 
         desc = QLabel("Create a ZIP backup of your pharmacy database.\nBackups include the database file and optionally logs.")
-        desc.setStyleSheet(f"color: {_SUBTEXT}; font-size: 9pt;")
+        desc.setStyleSheet(f"color: {Theme.text2()}; font-size: 9pt; background: transparent;")
         desc.setWordWrap(True)
         layout.addWidget(desc)
 
         # Include logs checkbox
         self._include_logs = QCheckBox("Include logs")
-        self._include_logs.setStyleSheet(f"color: {_SUBTEXT}; font-size: 9pt;")
+        self._include_logs.setStyleSheet(f"color: {Theme.text2()}; font-size: 9pt; background: transparent;")
         layout.addWidget(self._include_logs)
 
         # Destination folder row
         folder_row = QHBoxLayout()
         folder_row.setSpacing(8)
         folder_lbl = QLabel("Destination:")
-        folder_lbl.setStyleSheet(f"color: {_SUBTEXT}; font-size: 9pt;")
+        folder_lbl.setStyleSheet(f"color: {Theme.text2()}; font-size: 9pt; background: transparent;")
         folder_row.addWidget(folder_lbl)
         self._dest_folder = QLineEdit()
         self._dest_folder.setPlaceholderText("Default: backups/")
         self._dest_folder.setStyleSheet(
-            f"background-color: #313244; color: {_TEXT}; border: 1px solid #45475a; "
+            f"background-color: {Theme.input_bg()}; color: {Theme.text()}; border: 1px solid {Theme.input_border()}; "
             f"border-radius: 6px; padding: 6px 10px; font-size: 9pt;"
         )
         folder_row.addWidget(self._dest_folder, 1)
@@ -156,7 +146,7 @@ class BackupPage(QWidget):
         layout.addLayout(folder_row)
 
         # Backup button
-        self._backup_btn = QPushButton("\U0001f4be Create Backup Now")
+        self._backup_btn = QPushButton("Create Backup Now")
         self._backup_btn.setObjectName("PrimaryButton")
         self._backup_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self._backup_btn.clicked.connect(self._create_backup)
@@ -171,20 +161,20 @@ class BackupPage(QWidget):
         layout.setContentsMargins(16, 14, 16, 14)
         layout.setSpacing(10)
 
-        hdr = QLabel("\U0001f504 Restore Backup")
-        hdr.setStyleSheet(f"font-size: 12pt; font-weight: bold; color: {_TEXT};")
+        hdr = QLabel("Restore Backup")
+        hdr.setStyleSheet(f"font-size: 12pt; font-weight: bold; color: {Theme.text()}; background: transparent;")
         layout.addWidget(hdr)
 
         desc = QLabel("Restore pharmacy data from a backup ZIP file.\n⚠️ This will replace your current database. A safety backup is created automatically.")
-        desc.setStyleSheet(f"color: {_SUBTEXT}; font-size: 9pt;")
+        desc.setStyleSheet(f"color: {Theme.text2()}; font-size: 9pt; background: transparent;")
         desc.setWordWrap(True)
         layout.addWidget(desc)
 
         # Selected file display
         self._restore_file_label = QLabel("No file selected")
         self._restore_file_label.setStyleSheet(
-            f"color: {_SUBTEXT}; font-size: 9pt; "
-            f"background-color: #313244; border: 1px solid #45475a; "
+            f"color: {Theme.text2()}; font-size: 9pt; "
+            f"background-color: {Theme.input_bg()}; border: 1px solid {Theme.input_border()}; "
             f"border-radius: 6px; padding: 6px 10px;"
         )
         layout.addWidget(self._restore_file_label)
@@ -192,13 +182,13 @@ class BackupPage(QWidget):
         # Buttons row
         btn_row = QHBoxLayout()
         btn_row.setSpacing(8)
-        self._select_backup_btn = QPushButton("\U0001f4c2 Select Backup File")
+        self._select_backup_btn = QPushButton("Select Backup File")
         self._select_backup_btn.setObjectName("ToolbarButton")
         self._select_backup_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self._select_backup_btn.clicked.connect(self._select_backup_file)
         btn_row.addWidget(self._select_backup_btn)
 
-        self._restore_btn = QPushButton("\U0001f504 Restore Now")
+        self._restore_btn = QPushButton("Restore Now")
         self._restore_btn.setObjectName("PrimaryButton")
         self._restore_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self._restore_btn.setEnabled(False)
@@ -212,14 +202,14 @@ class BackupPage(QWidget):
 
     @staticmethod
     def _build_history_label() -> QLabel:
-        lbl = QLabel("\U0001f4cb Backup History")
-        lbl.setStyleSheet(f"font-size: 12pt; font-weight: bold; color: {_TEXT};")
+        lbl = QLabel("Backup History")
+        lbl.setStyleSheet(f"font-size: 12pt; font-weight: bold; color: {Theme.text()}; background: transparent;")
         return lbl
 
     @staticmethod
     def _build_settings_label() -> QLabel:
-        lbl = QLabel("\u2699\ufe0f Backup Settings")
-        lbl.setStyleSheet(f"font-size: 12pt; font-weight: bold; color: {_TEXT};")
+        lbl = QLabel("Backup Settings")
+        lbl.setStyleSheet(f"font-size: 12pt; font-weight: bold; color: {Theme.text()}; background: transparent;")
         return lbl
 
     def _build_settings_card(self) -> QFrame:
@@ -234,11 +224,11 @@ class BackupPage(QWidget):
         row1.setSpacing(10)
         lbl1 = QLabel("Backup Folder:")
         lbl1.setFixedWidth(120)
-        lbl1.setStyleSheet(f"color: {_SUBTEXT}; font-size: 10pt;")
+        lbl1.setStyleSheet(f"color: {Theme.text2()}; font-size: 10pt; background: transparent;")
         row1.addWidget(lbl1)
         self._settings_folder = QLineEdit()
         self._settings_folder.setStyleSheet(
-            f"background-color: #313244; color: {_TEXT}; border: 1px solid #45475a; "
+            f"background-color: {Theme.input_bg()}; color: {Theme.text()}; border: 1px solid {Theme.input_border()}; "
             f"border-radius: 6px; padding: 6px 10px; font-size: 10pt;"
         )
         row1.addWidget(self._settings_folder, 1)
@@ -253,14 +243,14 @@ class BackupPage(QWidget):
         row2 = QHBoxLayout()
         row2.setSpacing(16)
         self._auto_daily = QCheckBox("Automatic Daily Backup")
-        self._auto_daily.setStyleSheet(f"color: {_SUBTEXT}; font-size: 10pt;")
+        self._auto_daily.setStyleSheet(f"color: {Theme.text2()}; font-size: 10pt; background: transparent;")
         row2.addWidget(self._auto_daily)
         self._auto_weekly = QCheckBox("Automatic Weekly Backup")
-        self._auto_weekly.setStyleSheet(f"color: {_SUBTEXT}; font-size: 10pt;")
+        self._auto_weekly.setStyleSheet(f"color: {Theme.text2()}; font-size: 10pt; background: transparent;")
         row2.addWidget(self._auto_weekly)
         row2.addSpacing(16)
         max_lbl = QLabel("Max Backups:")
-        max_lbl.setStyleSheet(f"color: {_SUBTEXT}; font-size: 10pt;")
+        max_lbl.setStyleSheet(f"color: {Theme.text2()}; font-size: 10pt; background: transparent;")
         row2.addWidget(max_lbl)
         self._max_backups = QSpinBox()
         self._max_backups.setRange(1, 100)
@@ -329,18 +319,18 @@ class BackupPage(QWidget):
         include_logs = self._include_logs.isChecked()
 
         self._status_label.setText("Creating backup...")
-        self._status_label.setStyleSheet(f"color: {_BLUE}; font-size: 9pt;")
+        self._status_label.setStyleSheet(f"color: {Theme.accent()}; font-size: 9pt; background: transparent;")
         self._backup_btn.setEnabled(False)
 
         try:
             path = BackupService.create_backup(dest_folder=dest, include_logs=include_logs)
-            self._status_label.setText(f"\u2705 Backup created: {path.name}")
-            self._status_label.setStyleSheet(f"color: {_GREEN}; font-size: 9pt;")
+            self._status_label.setText(f"Backup created: {path.name}")
+            self._status_label.setStyleSheet(f"color: {Theme.success()}; font-size: 9pt; background: transparent;")
             self._load_history()
         except Exception as e:
             logger.exception("Backup creation failed")
-            self._status_label.setText(f"\u274c Backup failed: {e}")
-            self._status_label.setStyleSheet(f"color: {_RED}; font-size: 9pt;")
+            self._status_label.setText(f"Backup failed: {e}")
+            self._status_label.setStyleSheet(f"color: {Theme.danger()}; font-size: 9pt; background: transparent;")
         finally:
             self._backup_btn.setEnabled(True)
 
@@ -353,22 +343,22 @@ class BackupPage(QWidget):
         if path:
             self._selected_backup_path = path
             name = Path(path).name
-            self._restore_file_label.setText(f"\U0001f4c2 {name}")
+            self._restore_file_label.setText(name)
             self._restore_file_label.setStyleSheet(
-                f"color: {_TEXT}; font-size: 9pt; "
-                f"background-color: #313244; border: 1px solid #45475a; "
+                f"color: {Theme.text()}; font-size: 9pt; "
+                f"background-color: {Theme.input_bg()}; border: 1px solid {Theme.input_border()}; "
                 f"border-radius: 6px; padding: 6px 10px;"
             )
             # Validate
             valid, msg = BackupService.validate_backup(path)
             if valid:
                 self._restore_btn.setEnabled(True)
-                self._status_label.setText(f"\u2705 {msg}")
-                self._status_label.setStyleSheet(f"color: {_GREEN}; font-size: 9pt;")
+                self._status_label.setText(f"{msg}")
+                self._status_label.setStyleSheet(f"color: {Theme.success()}; font-size: 9pt; background: transparent;")
             else:
                 self._restore_btn.setEnabled(False)
-                self._status_label.setText(f"\u26a0\ufe0f {msg}")
-                self._status_label.setStyleSheet(f"color: {_YELLOW}; font-size: 9pt;")
+                self._status_label.setText(f"{msg}")
+                self._status_label.setStyleSheet(f"color: {Theme.warning()}; font-size: 9pt; background: transparent;")
 
     def _restore_backup(self) -> None:
         if not self._selected_backup_path:
@@ -391,13 +381,13 @@ class BackupPage(QWidget):
             return
 
         self._status_label.setText("Restoring backup...")
-        self._status_label.setStyleSheet(f"color: {_BLUE}; font-size: 9pt;")
+        self._status_label.setStyleSheet(f"color: {Theme.accent()}; font-size: 9pt; background: transparent;")
         self._restore_btn.setEnabled(False)
 
         try:
             BackupService.restore_backup(self._selected_backup_path)
-            self._status_label.setText("\u2705 Backup restored successfully! Restarting...")
-            self._status_label.setStyleSheet(f"color: {_GREEN}; font-size: 9pt;")
+            self._status_label.setText("Backup restored successfully! Restarting...")
+            self._status_label.setStyleSheet(f"color: {Theme.success()}; font-size: 9pt; background: transparent;")
 
             # Prompt restart
             reply2 = QMessageBox.information(
@@ -411,8 +401,8 @@ class BackupPage(QWidget):
                 self._restart_app()
         except Exception as e:
             logger.exception("Restore failed")
-            self._status_label.setText(f"\u274c Restore failed: {e}")
-            self._status_label.setStyleSheet(f"color: {_RED}; font-size: 9pt;")
+            self._status_label.setText(f"Restore failed: {e}")
+            self._status_label.setStyleSheet(f"color: {Theme.danger()}; font-size: 9pt; background: transparent;")
             self._restore_btn.setEnabled(True)
 
     def _restart_app(self) -> None:
@@ -438,10 +428,10 @@ class BackupPage(QWidget):
     def _restore_from_history(self, filepath: str) -> None:
         """Restore from a specific backup file in the history table."""
         self._selected_backup_path = filepath
-        self._restore_file_label.setText(f"\U0001f4c2 {Path(filepath).name}")
+        self._restore_file_label.setText(Path(filepath).name)
         self._restore_file_label.setStyleSheet(
-            f"color: {_TEXT}; font-size: 9pt; "
-            f"background-color: #313244; border: 1px solid #45475a; "
+            f"color: {Theme.text()}; font-size: 9pt; "
+            f"background-color: {Theme.input_bg()}; border: 1px solid {Theme.input_border()}; "
             f"border-radius: 6px; padding: 6px 10px;"
         )
         self._restore_btn.setEnabled(True)
@@ -460,12 +450,12 @@ class BackupPage(QWidget):
         )
         if reply == QMessageBox.StandardButton.Yes:
             if BackupService.delete_backup(filepath):
-                self._status_label.setText("\u2705 Backup deleted.")
-                self._status_label.setStyleSheet(f"color: {_GREEN}; font-size: 9pt;")
+                self._status_label.setText("Backup deleted.")
+                self._status_label.setStyleSheet(f"color: {Theme.success()}; font-size: 9pt; background: transparent;")
                 self._load_history()
             else:
-                self._status_label.setText("\u274c Failed to delete backup.")
-                self._status_label.setStyleSheet(f"color: {_RED}; font-size: 9pt;")
+                self._status_label.setText("Failed to delete backup.")
+                self._status_label.setStyleSheet(f"color: {Theme.danger()}; font-size: 9pt; background: transparent;")
 
     # ── Data loading ────────────────────────────────────────────
 
@@ -489,7 +479,7 @@ class BackupPage(QWidget):
             actions_layout.setContentsMargins(4, 2, 4, 2)
             actions_layout.setSpacing(4)
 
-            open_btn = QPushButton("\U0001f4c2")
+            open_btn = QPushButton("Open")
             open_btn.setFixedSize(28, 28)
             open_btn.setToolTip("Open folder")
             open_btn.setObjectName("ToolbarButton")
@@ -499,7 +489,7 @@ class BackupPage(QWidget):
             )
             actions_layout.addWidget(open_btn)
 
-            restore_btn = QPushButton("\U0001f504")
+            restore_btn = QPushButton("Restore")
             restore_btn.setFixedSize(28, 28)
             restore_btn.setToolTip("Restore this backup")
             restore_btn.setObjectName("ToolbarButton")
@@ -509,7 +499,7 @@ class BackupPage(QWidget):
             )
             actions_layout.addWidget(restore_btn)
 
-            del_btn = QPushButton("\U0001f5d1")
+            del_btn = QPushButton("Delete")
             del_btn.setFixedSize(28, 28)
             del_btn.setToolTip("Delete backup")
             del_btn.setObjectName("ToolbarButton")
@@ -525,7 +515,7 @@ class BackupPage(QWidget):
             self._history_table.setRowCount(1)
             empty_item = QTableWidgetItem("No backups found")
             empty_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-            empty_item.setForeground(QColor(_SUBTEXT))
+            empty_item.setForeground(QColor(Theme.text2()))
             self._history_table.setItem(0, 0, empty_item)
             self._history_table.setSpan(0, 0, 1, 5)
 
@@ -545,12 +535,12 @@ class BackupPage(QWidget):
 
         try:
             SettingsService.save(settings)
-            self._status_label.setText("\u2705 Backup settings saved.")
-            self._status_label.setStyleSheet(f"color: {_GREEN}; font-size: 9pt;")
+            self._status_label.setText("Backup settings saved.")
+            self._status_label.setStyleSheet(f"color: {Theme.success()}; font-size: 9pt; background: transparent;")
         except Exception as e:
             logger.exception("Failed to save backup settings")
-            self._status_label.setText(f"\u274c Failed to save: {e}")
-            self._status_label.setStyleSheet(f"color: {_RED}; font-size: 9pt;")
+            self._status_label.setText(f"Failed to save: {e}")
+            self._status_label.setStyleSheet(f"color: {Theme.danger()}; font-size: 9pt; background: transparent;")
 
     def showEvent(self, event) -> None:  # noqa: N802
         super().showEvent(event)

@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Sales History — Pharmacy{% endblock %}
+{% block page_title %}Sales History{% endblock %}
+{% block page_sub %}View past transactions and receipts{% endblock %}
+
+{% block content %}
+<div class="table-wrapper">
+    <div class="table-header">
+        <div class="table-title">Transactions</div>
+        <form method="GET" class="search-box">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" name="q" value="{{ q }}" placeholder="Search by bill number...">
+        </form>
+    </div>
+    {% if sales %}
+    <div class="table-scroll">
+        <table>
+            <thead>
+                <tr>
+                    <th>Bill #</th>
+                    <th>Date</th>
+                    <th class="text-right">Amount</th>
+                    <th class="text-right">Discount</th>
+                    <th class="text-right">VAT</th>
+                    <th class="text-right">Total</th>
+                    <th>Payment</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in sales %}
+                <tr>
+                    <td class="font-mono text-sm">{{ s.bill_number }}</td>
+                    <td class="text-sm">{{ s.sale_date.strftime('%Y-%m-%d %H:%M') if s.sale_date else '-' }}</td>
+                    <td class="text-right font-mono text-sm">Rs {{ "{:,.2f}".format(s.total_amount + s.discount - s.vat_amount) }}</td>
+                    <td class="text-right font-mono text-sm">{{ "{:,.2f}".format(s.discount) }}</td>
+                    <td class="text-right font-mono text-sm">{{ "{:,.2f}".format(s.vat_amount) }}</td>
+                    <td class="text-right font-mono" style="font-weight:600;">Rs {{ "{:,.2f}".format(s.total_amount) }}</td>
+                    <td><span class="badge badge-info">{{ s.payment_method }}</span></td>
+                    <td>
+                        <button class="action-btn" title="View Details" onclick="viewSale({{ s.id }})">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="table-empty">No sales found</div>
+    {% endif %}
+</div>
+
+<!-- Sale Detail Modal -->
+<div class="modal-overlay" id="saleDetailModal">
+    <div class="modal" style="max-width:600px;">
+        <div class="modal-header">
+            <div class="modal-title" id="saleDetailTitle">Sale Details</div>
+            <button class="modal-close" onclick="closeModal('saleDetailModal')">&times;</button>
+        </div>
+        <div class="modal-body" id="saleDetailBody">
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function viewSale(id) {
+    api.get('/api/sales/' + id).then(function(r) {
+        if (r.error) { alert(r.error); return; }
+        document.getElementById('saleDetailTitle').textContent = 'Bill: ' + r.bill_number;
+        let html = '<table style="width:100%"><thead><tr><th>Medicine</th><th>Batch</th><th class="text-right">Qty</th><th class="text-right">Price</th><th class="text-right">Subtotal</th></tr></thead><tbody>';
+        r.items.forEach(function(i) {
+            html += '<tr><td>' + i.medicine_name + '</td><td class="font-mono text-sm">' + i.batch_number + '</td><td class="text-right">' + i.quantity + '</td><td class="text-right font-mono">Rs ' + i.selling_price.toFixed(2) + '</td><td class="text-right font-mono">Rs ' + i.subtotal.toFixed(2) + '</td></tr>';
+        });
+        html += '</tbody></table>';
+        html += '<div style="margin-top:16px; border-top:1px solid var(--border); padding-top:12px;">';
+        html += '<div class="summary-row"><span>Date</span><span>' + r.sale_date + '</span></div>';
+        html += '<div class="summary-row"><span>Payment</span><span>' + r.payment_method + '</span></div>';
+        html += '<div class="summary-row"><span>Discount</span><span class="font-mono">Rs ' + r.discount.toFixed(2) + '</span></div>';
+        html += '<div class="summary-row"><span>VAT</span><span class="font-mono">Rs ' + r.vat_amount.toFixed(2) + '</span></div>';
+        html += '<div class="summary-row total"><span>Total</span><span class="font-mono">Rs ' + r.total_amount.toFixed(2) + '</span></div>';
+        html += '</div>';
+        document.getElementById('saleDetailBody').innerHTML = html;
+        openModal('saleDetailModal');
+    });
+}
+</script>
+{% endblock %}

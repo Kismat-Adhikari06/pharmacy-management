@@ -1,0 +1,554 @@
+{% extends "base.html" %}
+{% block title %}Inventory — Pharmacy{% endblock %}
+{% block page_title %}Inventory{% endblock %}
+{% block page_sub %}Manage medicines and batches{% endblock %}
+
+{% block content %}
+<div class="table-wrapper">
+    <div class="table-header">
+        <div class="flex items-center gap-3">
+            <div class="table-title">Medicines</div>
+            <span class="badge badge-neutral">{{ medicines|length }} items</span>
+        </div>
+        <div class="flex gap-2">
+            <form method="GET" class="search-box">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" name="q" value="{{ q }}" placeholder="Search medicines..." autocomplete="off">
+            </form>
+            <button class="btn btn-primary" onclick="openModal('addMedicineModal')">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add Medicine
+            </button>
+        </div>
+    </div>
+    {% if medicines %}
+    <div class="table-scroll">
+        <table>
+            <thead>
+                <tr>
+                    <th>Medicine Name</th>
+                    <th>Generic</th>
+                    <th>Company</th>
+                    <th>ID</th>
+                    <th>Stock</th>
+                    <th>Min Stock</th>
+                    <th>Expiry</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in medicines %}
+                {% set stock = m.batches|map(attribute='quantity')|sum %}
+                {% set earliest_batch = m.batches|sort(attribute='expiry_date')|first if m.batches else none %}
+                <tr>
+                    <td>
+                        <div style="font-weight:600;">{{ m.medicine_name }}</div>
+                        {% if m.rack_location %}<div class="text-sm text-muted">Rack: {{ m.rack_location }}</div>{% endif %}
+                    </td>
+                    <td class="text-sm">{{ m.generic_name or '-' }}</td>
+                    <td class="text-sm">{{ m.company or '-' }}</td>
+                    <td class="font-mono text-sm">{{ m.id }}</td>
+                    <td>
+                        {% if stock == 0 %}
+                            <span class="badge badge-danger">Out of Stock</span>
+                        {% elif stock <= m.minimum_stock %}
+                            <span class="badge badge-warning">{{ stock }}</span>
+                        {% else %}
+                            <span class="badge badge-success">{{ stock }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-sm">{{ m.minimum_stock }}</td>
+                    <td class="text-sm">
+                        {% if earliest_batch %}
+                            {{ earliest_batch.expiry_date.strftime('%Y-%m-%d') }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="action-group">
+                            <button class="action-btn" title="Edit" onclick="editMedicine({{ m.id }}, '{{ m.medicine_name|e }}', '{{ (m.generic_name or '')|e }}', '{{ (m.company or '')|e }}', '{{ (m.category or '')|e }}', '{{ (m.barcode or '')|e }}', '{{ (m.rack_location or '')|e }}', {{ m.minimum_stock }})">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            </button>
+                            <button class="action-btn danger" title="Delete" onclick="deleteMedicine({{ m.id }}, '{{ m.medicine_name|e }}')">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                            </button>
+                            <button class="action-btn" title="Add Batch" onclick="openAddBatch({{ m.id }}, '{{ m.medicine_name|e }}')">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="table-empty">
+        {% if q %}No medicines matching "{{ q }}"{% else %}No medicines yet. Add your first medicine to get started.{% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<!-- Add Medicine Modal -->
+<div class="modal-overlay" id="addMedicineModal">
+    <div class="modal" style="max-width:600px;">
+        <div class="modal-header">
+            <div class="modal-title">Add Medicine</div>
+            <button class="modal-close" onclick="closeModal('addMedicineModal')">&times;</button>
+        </div>
+        <!-- Mode Toggle -->
+        <div class="mode-toggle">
+            <button class="mode-btn active" id="modeManual" onclick="switchAddMode('manual')">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                Manual
+            </button>
+            <button class="mode-btn" id="modeScan" onclick="switchAddMode('scan')">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+                Scan Invoice
+            </button>
+        </div>
+
+        <!-- Manual Mode -->
+        <div class="modal-body" id="addModeManual">
+            <div class="form-group">
+                <label class="form-label">Medicine Name *</label>
+                <input type="text" class="form-input" id="addMedName" placeholder="e.g. Paracetamol 500mg">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Generic Name</label>
+                    <input type="text" class="form-input" id="addMedGeneric">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Company</label>
+                    <input type="text" class="form-input" id="addMedCompany">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Category</label>
+                    <input type="text" class="form-input" id="addMedCategory">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Barcode</label>
+                    <input type="text" class="form-input" id="addMedBarcode">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Rack Location</label>
+                    <input type="text" class="form-input" id="addMedRack">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Minimum Stock</label>
+                    <input type="number" class="form-input" id="addMedMinStock" value="0">
+                </div>
+            </div>
+            <div id="batchFieldsFromInvoice" class="hidden">
+                <div style="border-top:1px solid var(--border); margin:12px 0; padding-top:12px;">
+                    <div class="section-title" style="color:var(--accent);">Batch from Invoice</div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Batch Number</label>
+                        <input type="text" class="form-input" id="addMedBatchNumber">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Expiry Date</label>
+                        <input type="date" class="form-input" id="addMedExpiry">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Purchase Price</label>
+                        <input type="number" step="0.01" class="form-input" id="addMedPurchasePrice">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Selling Price</label>
+                        <input type="number" step="0.01" class="form-input" id="addMedSellingPrice">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Quantity</label>
+                    <input type="number" class="form-input" id="addMedQty" value="0">
+                </div>
+            </div>
+        </div>
+
+        <!-- Scan Mode -->
+        <div class="modal-body hidden" id="addModeScan">
+            <div class="scan-dropzone" id="invoiceDropzone">
+                <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--text3);"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                <p style="margin-top:8px;">Drop invoice image here or click to browse</p>
+                <p class="text-sm text-muted">JPG, PNG, WebP, BMP, or PDF</p>
+                <input type="file" id="invoiceFileInput" accept="image/*,.pdf" style="display:none;">
+            </div>
+            <div id="invoicePreview" class="hidden" style="margin-top:12px;">
+                <div class="flex items-center justify-between" style="margin-bottom:8px;">
+                    <span class="text-sm text-muted" id="invoiceFileName"></span>
+                    <button class="btn btn-sm btn-secondary" onclick="clearInvoiceUpload()">Remove</button>
+                </div>
+                <img id="invoicePreviewImg" style="max-height:180px; border-radius:8px; border:1px solid var(--border); width:100%; object-fit:contain;">
+            </div>
+            <button class="btn btn-primary" id="extractBtn" onclick="extractInvoice()" style="display:none; width:100%; justify-content:center; margin-top:12px;">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                Extract with AI
+            </button>
+            <div id="extractStatus" style="margin-top:10px;"></div>
+            <div id="extractedItems" class="hidden" style="margin-top:14px;">
+                <div class="section-title">Extracted Items — click to fill form</div>
+                <div id="extractedItemsList"></div>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('addMedicineModal')">Cancel</button>
+            <button class="btn btn-primary" id="addMedSubmitBtn" onclick="submitAddMedicine()">Add Medicine</button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Medicine Modal -->
+<div class="modal-overlay" id="editMedicineModal">
+    <div class="modal">
+        <div class="modal-header">
+            <div class="modal-title">Edit Medicine</div>
+            <button class="modal-close" onclick="closeModal('editMedicineModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="editMedId">
+            <div class="form-group">
+                <label class="form-label">Medicine Name *</label>
+                <input type="text" class="form-input" id="editMedName">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Generic Name</label>
+                    <input type="text" class="form-input" id="editMedGeneric">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Company</label>
+                    <input type="text" class="form-input" id="editMedCompany">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Category</label>
+                    <input type="text" class="form-input" id="editMedCategory">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Barcode</label>
+                    <input type="text" class="form-input" id="editMedBarcode">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Rack Location</label>
+                    <input type="text" class="form-input" id="editMedRack">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Minimum Stock</label>
+                    <input type="number" class="form-input" id="editMedMinStock">
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('editMedicineModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="submitEditMedicine()">Save Changes</button>
+        </div>
+    </div>
+</div>
+
+<!-- Add Batch Modal -->
+<div class="modal-overlay" id="addBatchModal">
+    <div class="modal">
+        <div class="modal-header">
+            <div class="modal-title">Add Batch — <span id="batchMedName"></span></div>
+            <button class="modal-close" onclick="closeModal('addBatchModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="batchMedId">
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Batch Number *</label>
+                    <input type="text" class="form-input" id="batchNumber">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Expiry Date *</label>
+                    <input type="date" class="form-input" id="batchExpiry">
+                </div>
+            </div>
+            <div class="form-row-3">
+                <div class="form-group">
+                    <label class="form-label">Purchase Price *</label>
+                    <input type="number" step="0.01" class="form-input" id="batchPurchasePrice">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Selling Price *</label>
+                    <input type="number" step="0.01" class="form-input" id="batchSellingPrice">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Quantity</label>
+                    <input type="number" class="form-input" id="batchQty" value="0">
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('addBatchModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="submitAddBatch()">Add Batch</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+var extractedInvoiceData = null;
+
+// ── Mode Toggle (Manual / Scan) ─────────────────────────
+function switchAddMode(mode) {
+    var manualBtn = document.getElementById('modeManual');
+    var scanBtn = document.getElementById('modeScan');
+    var manualPane = document.getElementById('addModeManual');
+    var scanPane = document.getElementById('addModeScan');
+    if (mode === 'scan') {
+        manualBtn.classList.remove('active');
+        scanBtn.classList.add('active');
+        manualPane.classList.add('hidden');
+        scanPane.classList.remove('hidden');
+    } else {
+        scanBtn.classList.remove('active');
+        manualBtn.classList.add('active');
+        scanPane.classList.add('hidden');
+        manualPane.classList.remove('hidden');
+    }
+}
+
+// ── File Upload Handling ─────────────────────────────────
+(function() {
+    var dropzone = document.getElementById('invoiceDropzone');
+    var fileInput = document.getElementById('invoiceFileInput');
+    if (!dropzone || !fileInput) return;
+
+    dropzone.addEventListener('click', function() { fileInput.click(); });
+    dropzone.addEventListener('dragover', function(e) { e.preventDefault(); dropzone.classList.add('dragover'); });
+    dropzone.addEventListener('dragleave', function() { dropzone.classList.remove('dragover'); });
+    dropzone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        dropzone.classList.remove('dragover');
+        if (e.dataTransfer.files.length) handleInvoiceFile(e.dataTransfer.files[0]);
+    });
+    fileInput.addEventListener('change', function() {
+        if (fileInput.files.length) handleInvoiceFile(fileInput.files[0]);
+    });
+})();
+
+function handleInvoiceFile(file) {
+    var validExts = /\.(jpg|jpeg|png|webp|bmp|tiff|tif|pdf)$/i;
+    if (!validExts.test(file.name)) {
+        alert('Unsupported file type. Use JPG, PNG, WebP, BMP, or PDF.');
+        return;
+    }
+    document.getElementById('invoiceFileName').textContent = file.name;
+    var preview = document.getElementById('invoicePreview');
+    var img = document.getElementById('invoicePreviewImg');
+    if (file.type.startsWith('image/')) {
+        var reader = new FileReader();
+        reader.onload = function(e) { img.src = e.target.result; };
+        reader.readAsDataURL(file);
+        img.style.display = 'block';
+    } else {
+        img.style.display = 'none';
+    }
+    preview.classList.remove('hidden');
+    document.getElementById('extractBtn').style.display = 'inline-flex';
+    document.getElementById('extractBtn').disabled = false;
+    window._invoiceFile = file;
+}
+
+function clearInvoiceUpload() {
+    document.getElementById('invoicePreview').classList.add('hidden');
+    document.getElementById('extractBtn').style.display = 'none';
+    document.getElementById('extractStatus').innerHTML = '';
+    document.getElementById('extractedItems').classList.add('hidden');
+    document.getElementById('invoiceFileInput').value = '';
+    document.getElementById('batchFieldsFromInvoice').classList.add('hidden');
+    window._invoiceFile = null;
+    extractedInvoiceData = null;
+}
+
+function extractInvoice() {
+    var file = window._invoiceFile;
+    if (!file) { alert('Please select an invoice image first'); return; }
+    var status = document.getElementById('extractStatus');
+    status.innerHTML = '<span style="color:var(--accent); font-size:13px;">Analyzing invoice with AI...</span>';
+    document.getElementById('extractBtn').disabled = true;
+
+    var formData = new FormData();
+    formData.append('file', file);
+
+    fetch('/api/inventory/extract-invoice', { method: 'POST', body: formData })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            document.getElementById('extractBtn').disabled = false;
+            if (data.error) {
+                status.innerHTML = '<span style="color:var(--danger); font-size:13px;">' + data.error + '</span>';
+                return;
+            }
+            extractedInvoiceData = data;
+            status.innerHTML = '<span style="color:var(--success); font-size:13px;">Found ' + data.items.length + ' item(s) — click one to fill the form</span>';
+            renderExtractedItems(data.items);
+        })
+        .catch(function(err) {
+            document.getElementById('extractBtn').disabled = false;
+            status.innerHTML = '<span style="color:var(--danger); font-size:13px;">Error: ' + err.message + '</span>';
+        });
+}
+
+function renderExtractedItems(items) {
+    var container = document.getElementById('extractedItemsList');
+    if (!items.length) {
+        container.innerHTML = '<div class="text-sm text-muted" style="padding:12px 0;">No items found in invoice</div>';
+        document.getElementById('extractedItems').classList.remove('hidden');
+        return;
+    }
+    container.innerHTML = items.map(function(item, idx) {
+        return '<div class="extracted-item" onclick="fillFromExtracted(' + idx + ')">' +
+            '<div style="font-weight:600;">' + (item.medicine_name || 'Unknown') + '</div>' +
+            '<div class="text-sm text-muted">' + (item.company || '') + ' &middot; Batch: ' + (item.batch_number || '-') + ' &middot; Exp: ' + (item.expiry_date || '-') + '</div>' +
+            '<div class="text-sm">Qty: ' + (item.quantity || 0) + ' &middot; Buy: Rs ' + (item.purchase_price || 0) + (item.selling_price ? ' &middot; Sell: Rs ' + item.selling_price : '') + '</div>' +
+        '</div>';
+    }).join('');
+    document.getElementById('extractedItems').classList.remove('hidden');
+}
+
+function fillFromExtracted(idx) {
+    if (!extractedInvoiceData || !extractedInvoiceData.items[idx]) return;
+    var item = extractedInvoiceData.items[idx];
+
+    // Fill medicine fields
+    document.getElementById('addMedName').value = item.medicine_name || '';
+    document.getElementById('addMedGeneric').value = item.generic_name || '';
+    document.getElementById('addMedCompany').value = item.company || '';
+
+    // Show and fill batch fields
+    document.getElementById('batchFieldsFromInvoice').classList.remove('hidden');
+    document.getElementById('addMedBatchNumber').value = item.batch_number || '';
+    document.getElementById('addMedPurchasePrice').value = item.purchase_price || '';
+    document.getElementById('addMedSellingPrice').value = item.selling_price || '';
+    document.getElementById('addMedQty').value = item.quantity || 0;
+
+    // Parse expiry date
+    if (item.expiry_date) {
+        var exp = item.expiry_date;
+        if (exp.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            document.getElementById('addMedExpiry').value = exp;
+        } else if (exp.match(/^\d{2}\/\d{4}$/)) {
+            var parts = exp.split('/');
+            var lastDay = new Date(parseInt(parts[1]), parseInt(parts[0]), 0).getDate();
+            document.getElementById('addMedExpiry').value = parts[1] + '-' + parts[0].padStart(2,'0') + '-' + String(lastDay).padStart(2,'0');
+        }
+    }
+
+    // Switch to manual mode so user sees the filled form
+    switchAddMode('manual');
+}
+
+// ── Submit Add Medicine ──────────────────────────────────
+function submitAddMedicine() {
+    var medData = {
+        medicine_name: document.getElementById('addMedName').value,
+        generic_name: document.getElementById('addMedGeneric').value,
+        company: document.getElementById('addMedCompany').value,
+        category: document.getElementById('addMedCategory').value,
+        barcode: document.getElementById('addMedBarcode').value,
+        rack_location: document.getElementById('addMedRack').value,
+        minimum_stock: parseInt(document.getElementById('addMedMinStock').value || '0')
+    };
+    if (!medData.medicine_name) { alert('Name is required'); return; }
+
+    var hasBatch = !document.getElementById('batchFieldsFromInvoice').classList.contains('hidden');
+    var batchNum = document.getElementById('addMedBatchNumber').value;
+
+    api.post('/api/inventory', medData).then(function(r) {
+        if (r.error) { alert(r.error); return; }
+        if (hasBatch && batchNum) {
+            var batchData = {
+                medicine_id: r.id,
+                batch_number: batchNum,
+                expiry_date: document.getElementById('addMedExpiry').value,
+                purchase_price: parseFloat(document.getElementById('addMedPurchasePrice').value || '0'),
+                selling_price: parseFloat(document.getElementById('addMedSellingPrice').value || '0'),
+                quantity: parseInt(document.getElementById('addMedQty').value || '0')
+            };
+            api.post('/api/batches', batchData).then(function(br) {
+                if (br.error) { alert('Medicine added but batch error: ' + br.error); }
+                window.location.reload();
+            });
+        } else {
+            window.location.reload();
+        }
+    });
+}
+
+function editMedicine(id, name, generic, company, category, barcode, rack, minStock) {
+    document.getElementById('editMedId').value = id;
+    document.getElementById('editMedName').value = name;
+    document.getElementById('editMedGeneric').value = generic;
+    document.getElementById('editMedCompany').value = company;
+    document.getElementById('editMedCategory').value = category;
+    document.getElementById('editMedBarcode').value = barcode;
+    document.getElementById('editMedRack').value = rack;
+    document.getElementById('editMedMinStock').value = minStock;
+    openModal('editMedicineModal');
+}
+
+function submitEditMedicine() {
+    var id = document.getElementById('editMedId').value;
+    var data = {
+        medicine_name: document.getElementById('editMedName').value,
+        generic_name: document.getElementById('editMedGeneric').value,
+        company: document.getElementById('editMedCompany').value,
+        category: document.getElementById('editMedCategory').value,
+        barcode: document.getElementById('editMedBarcode').value,
+        rack_location: document.getElementById('editMedRack').value,
+        minimum_stock: parseInt(document.getElementById('editMedMinStock').value || '0')
+    };
+    api.put('/api/inventory/' + id, data).then(function(r) {
+        if (r.error) { alert(r.error); return; }
+        window.location.reload();
+    });
+}
+
+function deleteMedicine(id, name) {
+    if (!confirm('Delete "' + name + '"? This cannot be undone.')) return;
+    api.del('/api/inventory/' + id).then(function(r) {
+        if (r.error) { alert(r.error); return; }
+        window.location.reload();
+    });
+}
+
+function openAddBatch(medId, medName) {
+    document.getElementById('batchMedId').value = medId;
+    document.getElementById('batchMedName').textContent = medName;
+    openModal('addBatchModal');
+}
+
+function submitAddBatch() {
+    var data = {
+        medicine_id: parseInt(document.getElementById('batchMedId').value),
+        batch_number: document.getElementById('batchNumber').value,
+        expiry_date: document.getElementById('batchExpiry').value,
+        purchase_price: parseFloat(document.getElementById('batchPurchasePrice').value || '0'),
+        selling_price: parseFloat(document.getElementById('batchSellingPrice').value || '0'),
+        quantity: parseInt(document.getElementById('batchQty').value || '0')
+    };
+    if (!data.batch_number || !data.expiry_date) { alert('Batch number and expiry date are required'); return; }
+    api.post('/api/batches', data).then(function(r) {
+        if (r.error) { alert(r.error); return; }
+        window.location.reload();
+    });
+}
+</script>
+{% endblock %}
