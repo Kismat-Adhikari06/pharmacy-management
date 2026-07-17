@@ -54,6 +54,11 @@
         <span class="spinner"></span> Processing...
       </div>
       <div class="pos-pay-error hidden" id="posPayError"></div>
+
+      <button class="pos-undo-btn" onclick="undoLastSale()" title="Undo last sale">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+        Undo Last Sale
+      </button>
     </div>
 
     <!-- Empty state -->
@@ -189,6 +194,26 @@ function incrementQty(idx) {
   renderCart();
 }
 
+function setQty(idx, val) {
+  var q = parseInt(val) || 1;
+  if (q < 1) q = 1;
+  if (q > billItems[idx].maxQty) q = billItems[idx].maxQty;
+  billItems[idx].quantity = q;
+  renderCart();
+}
+
+function undoLastSale() {
+  if (!confirm('Undo the last sale? This will restore the stock.')) return;
+  api.post('/api/billing/undo-last', {}).then(function(r) {
+    if (r.error) { alert(r.error); return; }
+    alert('Sale ' + r.bill_number + ' has been undone.');
+    api.get('/api/billing/search?q=').then(function(results) {
+      allBatches = results || [];
+      renderResults(allBatches);
+    });
+  });
+}
+
 function removeFromBill(idx) {
   billItems.splice(idx, 1);
   renderCart();
@@ -216,12 +241,12 @@ function renderCart() {
   list.innerHTML = billItems.map(function(item, idx) {
     var genericHtml = item.generic ? '<span class="pos-cart-generic">' + item.generic + '</span>' : '';
     return '<div class="pos-cart-item">' +
-      '<div class="pos-cart-item-left" onclick="removeFromBill(' + idx + ')">' +
+      '<div class="pos-cart-item-left">' +
         '<span class="pos-cart-name">' + item.name + '</span>' +
         genericHtml +
         '<div class="pos-cart-qty-controls">' +
           '<button class="pos-cart-qty-btn" onclick="event.stopPropagation(); decrementQty(' + idx + ')">&minus;</button>' +
-          '<span class="pos-cart-qty-val">' + item.quantity + '</span>' +
+          '<input type="number" class="pos-cart-qty-input" value="' + item.quantity + '" min="1" max="' + item.maxQty + '" onchange="setQty(' + idx + ', this.value)" onclick="event.stopPropagation()">' +
           '<button class="pos-cart-qty-btn" onclick="event.stopPropagation(); incrementQty(' + idx + ')">+</button>' +
         '</div>' +
       '</div>' +

@@ -115,10 +115,18 @@ def dashboard():
         ).scalar() if False else 0
 
         low_stock_items = _filter_active(db.query(Medicine)).all()
-        low_stock_count = sum(
-            1 for m in low_stock_items
-            if sum(b.quantity for b in m.batches) <= m.minimum_stock
-        )
+        low_stock_list = []
+        low_stock_count = 0
+        for m in low_stock_items:
+            stock = sum(b.quantity for b in m.batches)
+            if stock <= m.minimum_stock:
+                low_stock_count += 1
+                low_stock_list.append({
+                    "name": m.medicine_name,
+                    "generic": m.generic_name or "",
+                    "stock": stock,
+                    "min": m.minimum_stock,
+                })
 
         expiry_threshold = today + timedelta(days=90)
         expiring_count = db.query(Batch).filter(
@@ -133,6 +141,7 @@ def dashboard():
                                today_bills=today_bills,
                                total_inventory=total_inventory,
                                low_stock_count=low_stock_count,
+                               low_stock_list=low_stock_list,
                                expiring_count=expiring_count,
                                recent_sales=recent_sales,
                                today=today,
@@ -785,6 +794,26 @@ def api_billing_sale():
         db.commit()
         db.refresh(sale)
         return jsonify({"sale_id": sale.id, "bill_number": bill_number, "total": total})
+    finally:
+        db.close()
+
+
+@app.route("/api/billing/undo-last", methods=["POST"])
+def api_billing_undo_last():
+    db = get_db()
+    try:
+        sale = db.query(Sale).order_by(Sale.id.desc()).first()
+        if not sale:
+            return jsonify({"error": "No sales to undo"}), 400
+
+        for item in sale.items:
+            batch = db.get(Batch, item.batch_id)
+            if batch:
+                batch.quantity += item.quantity
+
+        db.delete(sale)
+        db.commit()
+        return jsonify({"message": "Last sale undone", "bill_number": sale.bill_number})
     finally:
         db.close()
 

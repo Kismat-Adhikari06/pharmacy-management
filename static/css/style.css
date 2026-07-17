@@ -311,6 +311,22 @@ body {
     border-color: var(--accent);
 }
 
+a.stat-card-link {
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+}
+
+a.stat-card-link:hover {
+    border-color: var(--accent);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+a.stat-card-link:active {
+    transform: translateY(0);
+}
+
 .stat-icon {
     width: 42px;
     height: 42px;
@@ -1149,6 +1165,56 @@ tbody td {
   background: var(--accent-bg);
   border-color: var(--accent);
   color: var(--accent);
+}
+
+.pos-cart-qty-input {
+  width: 42px;
+  height: 26px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'Courier New', monospace;
+  padding: 0 2px;
+  -moz-appearance: textfield;
+}
+
+.pos-cart-qty-input::-webkit-outer-spin-button,
+.pos-cart-qty-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.pos-cart-qty-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.pos-undo-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+  border-radius: 10px;
+  border: 1px dashed var(--border);
+  background: transparent;
+  color: var(--text3);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pos-undo-btn:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+  background: var(--danger-bg);
 }
 
 .pos-cart-qty-val {
