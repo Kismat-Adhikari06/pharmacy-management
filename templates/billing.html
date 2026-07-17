@@ -1,0 +1,372 @@
+{% extends "base.html" %}
+{% block title %}Billing (POS) — Pharmacy{% endblock %}
+{% block page_title %}Billing (POS){% endblock %}
+{% block page_sub %}{% endblock %}
+
+{% block content %}
+<div class="pos-layout">
+
+  <!-- LEFT: Search + Results + Cart -->
+  <div class="pos-main">
+
+    <!-- Big Search -->
+    <div class="pos-search-wrap">
+      <input type="text" id="posSearch" class="pos-search" placeholder="Search medicine name..." autocomplete="off" autofocus>
+      <div class="pos-search-status" id="posSearchStatus"></div>
+    </div>
+
+    <!-- Search Results -->
+    <div id="posResults" class="pos-results"></div>
+
+    <!-- Current Bill -->
+    <div id="posCartSection" class="pos-cart-section hidden">
+      <div class="pos-cart-header">
+        <span>Current Bill</span>
+        <span class="pos-cart-count" id="posCartCount">0 items</span>
+      </div>
+      <div class="pos-cart-list" id="posCartList"></div>
+
+      <!-- Discount (hidden by default) -->
+      <div class="pos-discount-area">
+        <button class="pos-discount-toggle" id="posDiscountToggle" onclick="toggleDiscount()">+ Add discount</button>
+        <div class="pos-discount-input hidden" id="posDiscountInput">
+          <span>Discount:</span>
+          <input type="number" step="0.01" value="0" id="posDiscount" oninput="recalcTotal()" class="pos-discount-field">
+        </div>
+      </div>
+
+      <!-- Big Total -->
+      <div class="pos-total" id="posTotal">Rs 0.00</div>
+
+      <!-- Payment Buttons -->
+      <div class="pos-payment" id="posPayment">
+        <button class="pos-pay-btn pos-pay-cash" onclick="pay('Cash')">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/></svg>
+          Cash
+        </button>
+        <button class="pos-pay-btn pos-pay-qr" onclick="pay('QR')">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+          QR
+        </button>
+      </div>
+
+      <div class="pos-pay-spinner hidden" id="posPaySpinner">
+        <span class="spinner"></span> Processing...
+      </div>
+      <div class="pos-pay-error hidden" id="posPayError"></div>
+    </div>
+
+    <!-- Empty state -->
+    <div id="posEmpty" class="pos-empty">
+      <p>Loading available medicines...</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- Receipt Overlay (shown after sale) -->
+<div class="receipt-overlay hidden" id="receiptOverlay">
+  <div class="receipt-card" id="receiptCard">
+    <button class="receipt-close" onclick="resetPOS()" title="Close">&times;</button>
+    <div id="receiptContent" class="receipt-print"></div>
+    <div class="receipt-actions">
+      <button class="btn btn-primary" onclick="window.print();" style="flex:1; justify-content:center; padding:14px;">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Print Receipt
+      </button>
+      <button class="btn btn-secondary" onclick="resetPOS()" style="flex:1; justify-content:center; padding:14px;">Next Customer</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let billItems = [];
+let searchTimer = null;
+let allBatches = [];
+let lastSaleData = null;
+const vatRate = 0;
+
+// ── Load all medicines on page load ──────────────────────
+(function loadAllMedicines() {
+  api.get('/api/billing/search?q=').then(function(results) {
+    allBatches = results || [];
+    var empty = document.getElementById('posEmpty');
+    if (allBatches.length) {
+      empty.style.display = 'none';
+      renderResults(allBatches);
+    } else {
+      empty.innerHTML = '<p>No medicines in inventory yet</p><p style="font-size:13px; margin-top:4px;">Go to <a href="/inventory" style="color:var(--accent);">Inventory</a> to add medicines.</p>';
+    }
+  }).catch(function(err) {
+    document.getElementById('posEmpty').innerHTML = '<p style="color:var(--danger);">Failed to load inventory</p>';
+  });
+})();
+
+function renderResults(batches) {
+  var el = document.getElementById('posResults');
+  var status = document.getElementById('posSearchStatus');
+  if (!batches || !batches.length) {
+    el.innerHTML = '<div class="pos-no-results">No medicines found</div>';
+    status.textContent = '';
+    return;
+  }
+  status.textContent = batches.length + ' item' + (batches.length !== 1 ? 's' : '') + ' found';
+  el.innerHTML = batches.map(function(r) {
+    var genericLine = r.generic_name ? '<span class="pos-result-generic">' + r.generic_name + '</span>' : '';
+    var companyLine = r.company ? '<span class="pos-result-company">' + r.company + '</span>' : '';
+    var batchLine = '<span class="pos-result-batch">Batch: ' + (r.batch_number || '-') + ' &middot; ' + (r.expiry_status || '') + '</span>';
+    return '<div class="pos-result" data-batch="' + r.batch_id + '" data-med="' + r.medicine_id + '" data-name="' + r.medicine_name.replace(/"/g, '&quot;') + '" data-generic="' + (r.generic_name || '').replace(/"/g, '&quot;') + '" data-price="' + r.selling_price + '" data-qty="' + r.quantity + '">' +
+      '<div class="pos-result-info">' +
+        '<span class="pos-result-name">' + r.medicine_name + '</span>' +
+        genericLine + companyLine + batchLine +
+      '</div>' +
+      '<span class="pos-result-price">Rs ' + r.selling_price.toFixed(2) + '</span>' +
+    '</div>';
+  }).join('');
+}
+
+// Click handler using event delegation on posResults
+document.getElementById('posResults').addEventListener('click', function(e) {
+  var row = e.target.closest('.pos-result');
+  if (row) {
+    addToBill(
+      parseInt(row.getAttribute('data-batch')),
+      parseInt(row.getAttribute('data-med')),
+      row.getAttribute('data-name'),
+      row.getAttribute('data-generic'),
+      parseFloat(row.getAttribute('data-price')),
+      parseInt(row.getAttribute('data-qty'))
+    );
+  }
+});
+
+document.getElementById('posSearch').addEventListener('input', function() {
+  clearTimeout(searchTimer);
+  var q = this.value.trim();
+  if (q.length < 1) {
+    renderResults(allBatches);
+    return;
+  }
+  searchTimer = setTimeout(function() {
+    api.get('/api/billing/search?q=' + encodeURIComponent(q)).then(function(results) {
+      renderResults(results || []);
+    });
+  }, 150);
+});
+
+// ── Add to bill (tap = qty 1, tap again = +1) ──────────
+function addToBill(batchId, medId, name, generic, price, maxQty) {
+  var existing = null;
+  for (var i = 0; i < billItems.length; i++) {
+    if (billItems[i].batch_id === batchId) {
+      existing = billItems[i];
+      break;
+    }
+  }
+  if (existing) {
+    if (existing.quantity < maxQty) existing.quantity++;
+  } else {
+    billItems.push({ batch_id: batchId, medicine_id: medId, name: name, generic: generic, price: price, quantity: 1, maxQty: maxQty });
+  }
+  renderCart();
+}
+
+function decrementQty(idx) {
+  if (billItems[idx].quantity > 1) {
+    billItems[idx].quantity--;
+  } else {
+    billItems.splice(idx, 1);
+  }
+  renderCart();
+}
+
+function incrementQty(idx) {
+  if (billItems[idx].quantity < billItems[idx].maxQty) {
+    billItems[idx].quantity++;
+  }
+  renderCart();
+}
+
+function removeFromBill(idx) {
+  billItems.splice(idx, 1);
+  renderCart();
+}
+
+function renderCart() {
+  var section = document.getElementById('posCartSection');
+  var list = document.getElementById('posCartList');
+  var countEl = document.getElementById('posCartCount');
+  var empty = document.getElementById('posEmpty');
+
+  if (!billItems.length) {
+    section.classList.add('hidden');
+    if (allBatches && allBatches.length) {
+      empty.innerHTML = '<p style="color:var(--text3);">Tap a medicine to add it to the bill</p>';
+    }
+    empty.style.display = '';
+    return;
+  }
+
+  section.classList.remove('hidden');
+  empty.style.display = 'none';
+  countEl.textContent = billItems.length + ' item' + (billItems.length !== 1 ? 's' : '');
+
+  list.innerHTML = billItems.map(function(item, idx) {
+    var genericHtml = item.generic ? '<span class="pos-cart-generic">' + item.generic + '</span>' : '';
+    return '<div class="pos-cart-item">' +
+      '<div class="pos-cart-item-left" onclick="removeFromBill(' + idx + ')">' +
+        '<span class="pos-cart-name">' + item.name + '</span>' +
+        genericHtml +
+        '<div class="pos-cart-qty-controls">' +
+          '<button class="pos-cart-qty-btn" onclick="event.stopPropagation(); decrementQty(' + idx + ')">&minus;</button>' +
+          '<span class="pos-cart-qty-val">' + item.quantity + '</span>' +
+          '<button class="pos-cart-qty-btn" onclick="event.stopPropagation(); incrementQty(' + idx + ')">+</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="pos-cart-item-right">' +
+        '<span class="pos-cart-line">Rs ' + (item.price * item.quantity).toFixed(2) + '</span>' +
+        '<button class="pos-cart-remove" onclick="event.stopPropagation(); removeFromBill(' + idx + ')">&times;</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  recalcTotal();
+}
+
+function recalcTotal() {
+  var subtotal = billItems.reduce(function(s, i) { return s + i.price * i.quantity; }, 0);
+  var discount = parseFloat(document.getElementById('posDiscount').value || '0');
+  var vat = subtotal * vatRate / 100;
+  var total = subtotal - discount + vat;
+  document.getElementById('posTotal').textContent = 'Rs ' + total.toFixed(2);
+}
+
+function toggleDiscount() {
+  var el = document.getElementById('posDiscountInput');
+  el.classList.toggle('hidden');
+  if (!el.classList.contains('hidden')) {
+    document.getElementById('posDiscount').focus();
+  }
+}
+
+// ── Payment (immediately completes sale) ────────────────
+function pay(method) {
+  if (!billItems.length) return;
+  var total = parseFloat(document.getElementById('posTotal').textContent.replace('Rs ', ''));
+
+  var payload = {
+    items: billItems.map(function(i) { return { batch_id: i.batch_id, quantity: i.quantity, selling_price: i.price, discount: 0 }; }),
+    payment_method: method,
+    discount: parseFloat(document.getElementById('posDiscount').value || '0'),
+    vat_rate: vatRate
+  };
+
+  // Show spinner, hide buttons
+  document.getElementById('posPayment').classList.add('hidden');
+  document.getElementById('posPaySpinner').classList.remove('hidden');
+
+  api.post('/api/billing/sale', payload).then(function(r) {
+    if (r.error) {
+      document.getElementById('posPayment').classList.remove('hidden');
+      document.getElementById('posPaySpinner').classList.add('hidden');
+      var errEl = document.getElementById('posPayError');
+      errEl.textContent = r.error;
+      errEl.classList.remove('hidden');
+      setTimeout(function() { errEl.classList.add('hidden'); }, 4000);
+      return;
+    }
+
+    // Store sale data for receipt
+    lastSaleData = {
+      bill_number: r.bill_number,
+      total: r.total,
+      items: billItems.map(function(i) { return { name: i.name, price: i.price, quantity: i.quantity, subtotal: i.price * i.quantity }; }),
+      subtotal: billItems.reduce(function(s, i) { return s + i.price * i.quantity; }, 0),
+      discount: payload.discount,
+      vat_amount: billItems.reduce(function(s, i) { return s + i.price * i.quantity; }, 0) * vatRate / 100,
+      vat_rate: vatRate,
+      payment_method: method,
+      date: new Date()
+    };
+
+    showReceipt();
+  });
+}
+
+function showReceipt() {
+  var d = lastSaleData;
+  if (!d) return;
+
+  var dateStr = d.date.getFullYear() + '-' +
+    String(d.date.getMonth() + 1).padStart(2, '0') + '-' +
+    String(d.date.getDate()).padStart(2, '0') + ' ' +
+    String(d.date.getHours()).padStart(2, '0') + ':' +
+    String(d.date.getMinutes()).padStart(2, '0');
+
+  var itemsHtml = d.items.map(function(i) {
+    return '<tr>' +
+      '<td style="padding:4px 0; border-bottom:1px dashed #eee;">' + i.name + '</td>' +
+      '<td style="padding:4px 0; text-align:center; border-bottom:1px dashed #eee;">' + i.quantity + '</td>' +
+      '<td style="padding:4px 0; text-align:right; border-bottom:1px dashed #eee;">Rs ' + i.subtotal.toFixed(2) + '</td>' +
+    '</tr>';
+  }).join('');
+
+  var html =
+    '<div style="text-align:center; margin-bottom:16px;">' +
+      '<div style="font-size:20px; font-weight:800; letter-spacing:1px; color:#111;">KRISHNA PHARMACY</div>' +
+      '<div style="font-size:11px; color:#666; margin-top:4px;">' + dateStr + '</div>' +
+    '</div>' +
+    '<div style="display:flex; justify-content:space-between; font-size:11px; color:#555; margin-bottom:8px;">' +
+      '<span>Bill: <strong style="color:#111;">' + d.bill_number + '</strong></span>' +
+      '<span>' + d.payment_method + '</span>' +
+    '</div>' +
+    '<hr style="border:none; border-top:1px dashed #ccc; margin:8px 0;">' +
+    '<table style="width:100%; border-collapse:collapse; font-size:12px;">' +
+      '<thead><tr style="font-weight:600; color:#999;">' +
+        '<th style="text-align:left; padding:2px 0 6px; border-bottom:1px dashed #ddd;">Item</th>' +
+        '<th style="text-align:center; padding:2px 0 6px; border-bottom:1px dashed #ddd;">Qty</th>' +
+        '<th style="text-align:right; padding:2px 0 6px; border-bottom:1px dashed #ddd;">Total</th>' +
+      '</tr></thead>' +
+      '<tbody>' + itemsHtml + '</tbody>' +
+    '</table>' +
+    '<hr style="border:none; border-top:1px dashed #ccc; margin:8px 0;">' +
+    '<div style="display:flex; justify-content:space-between; font-size:12px; color:#555; padding:2px 0;"><span>Subtotal</span><span>Rs ' + d.subtotal.toFixed(2) + '</span></div>';
+
+  if (d.discount > 0) {
+    html += '<div style="display:flex; justify-content:space-between; font-size:12px; color:#555; padding:2px 0;"><span>Discount</span><span style="color:var(--danger);">-Rs ' + d.discount.toFixed(2) + '</span></div>';
+  }
+  if (d.vat_rate > 0) {
+    html += '<div style="display:flex; justify-content:space-between; font-size:12px; color:#555; padding:2px 0;"><span>VAT (' + d.vat_rate + '%)</span><span>Rs ' + d.vat_amount.toFixed(2) + '</span></div>';
+  }
+
+  html += '<hr style="border:none; border-top:2px solid #111; margin:10px 0;">' +
+    '<div style="display:flex; justify-content:space-between; font-weight:800; font-size:18px; color:#111;"><span>TOTAL</span><span>Rs ' + d.total.toFixed(2) + '</span></div>' +
+    '<hr style="border:none; border-top:2px solid #111; margin:10px 0;">' +
+    '<div style="text-align:center; margin-top:12px; font-size:11px; color:#888;">Thank you for your purchase!</div>' +
+    '<div style="text-align:center; margin-top:4px; font-size:10px; color:#aaa;">Get well soon :)</div>';
+
+  document.getElementById('receiptContent').innerHTML = html;
+  document.getElementById('receiptOverlay').classList.remove('hidden');
+
+  // Refresh stock in background
+  api.get('/api/billing/search?q=').then(function(results) {
+    allBatches = results || [];
+  });
+}
+
+function resetPOS() {
+  document.getElementById('receiptOverlay').classList.add('hidden');
+  billItems = [];
+  document.getElementById('posDiscount').value = '0';
+  document.getElementById('posDiscountInput').classList.add('hidden');
+  document.getElementById('posPayment').classList.remove('hidden');
+  document.getElementById('posPaySpinner').classList.add('hidden');
+  renderCart();
+  renderResults(allBatches);
+  document.getElementById('posSearch').value = '';
+  document.getElementById('posSearch').focus();
+}
+</script>
+{% endblock %}

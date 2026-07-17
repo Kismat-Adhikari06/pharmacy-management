@@ -1,0 +1,718 @@
+{% extends "base.html" %}
+{% block title %}Inventory — Pharmacy{% endblock %}
+{% block page_title %}Inventory{% endblock %}
+{% block page_sub %}Manage medicines and batches{% endblock %}
+
+{% block content %}
+<div class="table-wrapper">
+    <div class="table-header">
+        <div class="flex items-center gap-3">
+            <div class="table-title">Medicines</div>
+            <span class="badge badge-neutral">{{ medicines|length }} items</span>
+        </div>
+        <div class="flex gap-2">
+            <form method="GET" class="search-box">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" name="q" value="{{ q }}" placeholder="Search medicines..." autocomplete="off">
+            </form>
+            <div id="batchActions" class="batch-actions hidden">
+                <span class="batch-count" id="selectedCount">0 selected</span>
+                <button class="btn btn-danger btn-sm" onclick="batchDelete()" style="padding:6px 14px;">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                    Delete Selected
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="clearSelection()" style="padding:6px 14px;">
+                    Clear
+                </button>
+            </div>
+            <button class="btn btn-primary" onclick="openModal('addMedicineModal')">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add Medicine
+            </button>
+        </div>
+    </div>
+    {% if medicines %}
+    <div class="table-scroll">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:40px;"><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this.checked)" style="width:16px; height:16px; cursor:pointer; accent-color:var(--accent);"></th>
+                    <th>Medicine Name</th>
+                    <th>Generic</th>
+                    <th>Company</th>
+                    <th>Stock</th>
+                    <th>Expiry</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in medicines %}
+                {% set stock = m.batches|map(attribute='quantity')|sum %}
+                {% set earliest_batch = m.batches|sort(attribute='expiry_date')|first if m.batches else none %}
+                <tr data-med-id="{{ m.id }}">
+                    <td style="width:40px;"><input type="checkbox" class="med-checkbox" value="{{ m.id }}" onchange="updateSelection()" style="width:16px; height:16px; cursor:pointer; accent-color:var(--accent);"></td>
+                    <td>
+                        <div style="font-weight:600;">{{ m.medicine_name }}</div>
+                    </td>
+                    <td class="text-sm">{{ m.generic_name or '-' }}</td>
+                    <td class="text-sm">{{ m.company or '-' }}</td>
+                    <td>
+                        {% if stock == 0 %}
+                            <span class="badge badge-danger">Out of Stock</span>
+                        {% else %}
+                            <span class="badge badge-success">{{ stock }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-sm">
+                        {% if earliest_batch %}
+                            {{ earliest_batch.expiry_date.strftime('%Y-%m-%d') }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="action-group">
+                            <button class="action-btn" title="Edit" onclick="editMedicine({{ m.id }}, '{{ m.medicine_name|e }}', '{{ (m.generic_name or '')|e }}', '{{ (m.company or '')|e }}', '{{ (m.category or '')|e }}', {{ m.minimum_stock }})">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            </button>
+                            <button class="action-btn danger" title="Delete" onclick="deleteMedicine({{ m.id }}, '{{ m.medicine_name|e }}')">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                            </button>
+                            <button class="action-btn" title="Add Batch" onclick="openAddBatch({{ m.id }}, '{{ m.medicine_name|e }}')">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="table-empty">
+        {% if q %}No medicines matching "{{ q }}"{% else %}No medicines yet. Add your first medicine to get started.{% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<!-- Add Medicine Modal -->
+<div class="modal-overlay" id="addMedicineModal">
+    <div class="modal" style="max-width:600px;">
+        <div class="modal-header">
+            <div class="modal-title">Add Medicine</div>
+            <button class="modal-close" onclick="closeModal('addMedicineModal')">&times;</button>
+        </div>
+        <!-- Mode Toggle -->
+        <div class="mode-toggle">
+            <button class="mode-btn active" id="modeManual" onclick="switchAddMode('manual')">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                Manual
+            </button>
+            <button class="mode-btn" id="modeScan" onclick="switchAddMode('scan')">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+                Scan Invoice
+            </button>
+        </div>
+
+        <!-- Manual Mode -->
+        <div class="modal-body" id="addModeManual">
+            <div class="form-group">
+                <label class="form-label">Medicine Name *</label>
+                <input type="text" class="form-input" id="addMedName" placeholder="e.g. Paracetamol 500mg">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Generic Name</label>
+                    <input type="text" class="form-input" id="addMedGeneric">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Company</label>
+                    <input type="text" class="form-input" id="addMedCompany">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Category</label>
+                <input type="text" class="form-input" id="addMedCategory">
+            </div>
+            <div id="batchFieldsFromInvoice" class="hidden">
+                <div style="border-top:1px solid var(--border); margin:12px 0; padding-top:12px;">
+                    <div class="section-title" style="color:var(--accent);">Batch from Invoice</div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Batch Number</label>
+                        <input type="text" class="form-input" id="addMedBatchNumber">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Expiry Date</label>
+                        <input type="date" class="form-input" id="addMedExpiry">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Purchase Price</label>
+                        <input type="number" step="0.01" class="form-input" id="addMedPurchasePrice">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Selling Price</label>
+                        <input type="number" step="0.01" class="form-input" id="addMedSellingPrice">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Quantity</label>
+                    <input type="number" class="form-input" id="addMedQty" value="0">
+                </div>
+            </div>
+        </div>
+
+        <!-- Scan Mode -->
+        <div class="modal-body hidden" id="addModeScan">
+            <div class="scan-dropzone" id="invoiceDropzone">
+                <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--text3);"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                <p style="margin-top:8px;">Drop invoice image here or click to browse</p>
+                <p class="text-sm text-muted">JPG, PNG, WebP, BMP, or PDF</p>
+                <input type="file" id="invoiceFileInput" accept="image/*,.pdf" style="display:none;">
+            </div>
+            <div id="invoicePreview" class="hidden" style="margin-top:12px;">
+                <div class="flex items-center justify-between" style="margin-bottom:8px;">
+                    <span class="text-sm text-muted" id="invoiceFileName"></span>
+                    <button class="btn btn-sm btn-secondary" onclick="clearInvoiceUpload()">Remove</button>
+                </div>
+                <img id="invoicePreviewImg" style="max-height:180px; border-radius:8px; border:1px solid var(--border); width:100%; object-fit:contain;">
+            </div>
+            <button class="btn btn-primary" id="extractBtn" onclick="extractInvoice()" style="display:none; width:100%; justify-content:center; margin-top:12px;">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                Extract with AI
+            </button>
+            <div id="extractStatus" style="margin-top:10px;"></div>
+            <div id="extractedItems" class="hidden" style="margin-top:14px;">
+                <div class="section-title">Extracted Items</div>
+                <div id="extractedItemsList"></div>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('addMedicineModal')">Cancel</button>
+            <button class="btn btn-primary" id="addMedSubmitBtn" onclick="submitAddMedicine()">Add Medicine</button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Medicine Modal -->
+<div class="modal-overlay" id="editMedicineModal">
+    <div class="modal">
+        <div class="modal-header">
+            <div class="modal-title">Edit Medicine</div>
+            <button class="modal-close" onclick="closeModal('editMedicineModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="editMedId">
+            <div class="form-group">
+                <label class="form-label">Medicine Name *</label>
+                <input type="text" class="form-input" id="editMedName">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Generic Name</label>
+                    <input type="text" class="form-input" id="editMedGeneric">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Company</label>
+                    <input type="text" class="form-input" id="editMedCompany">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Category</label>
+                <input type="text" class="form-input" id="editMedCategory">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Minimum Stock</label>
+                <input type="number" class="form-input" id="editMedMinStock" value="0">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('editMedicineModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="submitEditMedicine()">Save Changes</button>
+        </div>
+    </div>
+</div>
+
+<!-- Add Batch Modal -->
+<div class="modal-overlay" id="addBatchModal">
+    <div class="modal">
+        <div class="modal-header">
+            <div class="modal-title">Add Batch — <span id="batchMedName"></span></div>
+            <button class="modal-close" onclick="closeModal('addBatchModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="batchMedId">
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Batch Number *</label>
+                    <input type="text" class="form-input" id="batchNumber">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Expiry Date *</label>
+                    <input type="date" class="form-input" id="batchExpiry">
+                </div>
+            </div>
+            <div class="form-row-3">
+                <div class="form-group">
+                    <label class="form-label">Purchase Price *</label>
+                    <input type="number" step="0.01" class="form-input" id="batchPurchasePrice">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Selling Price *</label>
+                    <input type="number" step="0.01" class="form-input" id="batchSellingPrice">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Quantity</label>
+                    <input type="number" class="form-input" id="batchQty" value="0">
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('addBatchModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="submitAddBatch()">Add Batch</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+var extractedInvoiceData = null;
+
+// ── Mode Toggle (Manual / Scan) ─────────────────────────
+function switchAddMode(mode) {
+    var manualBtn = document.getElementById('modeManual');
+    var scanBtn = document.getElementById('modeScan');
+    var manualPane = document.getElementById('addModeManual');
+    var scanPane = document.getElementById('addModeScan');
+    var submitBtn = document.getElementById('addMedSubmitBtn');
+    if (mode === 'scan') {
+        manualBtn.classList.remove('active');
+        scanBtn.classList.add('active');
+        manualPane.classList.add('hidden');
+        scanPane.classList.remove('hidden');
+        // Hide submit button until extraction completes
+        submitBtn.style.display = 'none';
+    } else {
+        scanBtn.classList.remove('active');
+        manualBtn.classList.add('active');
+        scanPane.classList.add('hidden');
+        manualPane.classList.remove('hidden');
+        // Show submit button for manual mode
+        submitBtn.style.display = 'inline-flex';
+    }
+}
+
+// ── File Upload Handling ─────────────────────────────────
+(function() {
+    var dropzone = document.getElementById('invoiceDropzone');
+    var fileInput = document.getElementById('invoiceFileInput');
+    if (!dropzone || !fileInput) return;
+
+    dropzone.addEventListener('click', function() { fileInput.click(); });
+    dropzone.addEventListener('dragover', function(e) { e.preventDefault(); dropzone.classList.add('dragover'); });
+    dropzone.addEventListener('dragleave', function() { dropzone.classList.remove('dragover'); });
+    dropzone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        dropzone.classList.remove('dragover');
+        if (e.dataTransfer.files.length) handleInvoiceFile(e.dataTransfer.files[0]);
+    });
+    fileInput.addEventListener('change', function() {
+        if (fileInput.files.length) handleInvoiceFile(fileInput.files[0]);
+    });
+})();
+
+function handleInvoiceFile(file) {
+    var validExts = /\.(jpg|jpeg|png|webp|bmp|tiff|tif|pdf)$/i;
+    if (!validExts.test(file.name)) {
+        alert('Unsupported file type. Use JPG, PNG, WebP, BMP, or PDF.');
+        return;
+    }
+    document.getElementById('invoiceFileName').textContent = file.name;
+    var preview = document.getElementById('invoicePreview');
+    var img = document.getElementById('invoicePreviewImg');
+    if (file.type.startsWith('image/')) {
+        var reader = new FileReader();
+        reader.onload = function(e) { img.src = e.target.result; };
+        reader.readAsDataURL(file);
+        img.style.display = 'block';
+    } else {
+        img.style.display = 'none';
+    }
+    preview.classList.remove('hidden');
+    document.getElementById('extractBtn').style.display = 'inline-flex';
+    document.getElementById('extractBtn').disabled = false;
+    window._invoiceFile = file;
+}
+
+function clearInvoiceUpload() {
+    document.getElementById('invoicePreview').classList.add('hidden');
+    document.getElementById('extractBtn').style.display = 'none';
+    document.getElementById('extractStatus').innerHTML = '';
+    document.getElementById('extractedItems').classList.add('hidden');
+    document.getElementById('invoiceFileInput').value = '';
+    document.getElementById('batchFieldsFromInvoice').classList.add('hidden');
+    document.getElementById('addMedSubmitBtn').style.display = 'none';
+    window._invoiceFile = null;
+    extractedInvoiceData = null;
+}
+
+function extractInvoice() {
+    var file = window._invoiceFile;
+    if (!file) { alert('Please select an invoice image first'); return; }
+    var status = document.getElementById('extractStatus');
+    var container = document.getElementById('extractedItemsList');
+    var extractedSection = document.getElementById('extractedItems');
+    var submitBtn = document.getElementById('addMedSubmitBtn');
+
+    status.innerHTML = '<span style="color:var(--accent); font-size:13px;">Extracting... <span id="extractCount">0</span> items found so far</span>';
+    document.getElementById('extractBtn').disabled = true;
+    submitBtn.style.display = 'none';
+    container.innerHTML = '';
+    extractedSection.classList.remove('hidden');
+
+    var allItems = [];
+    var formData = new FormData();
+    formData.append('file', file);
+
+    fetch('/api/inventory/extract-invoice', { method: 'POST', body: formData })
+        .then(function(response) {
+            if (!response.ok) {
+                return response.json().then(function(d) { throw new Error(d.error || 'Extraction failed'); });
+            }
+            var reader = response.body.getReader();
+            var decoder = new TextDecoder();
+            var sseBuffer = '';
+
+            function processStream() {
+                reader.read().then(function(result) {
+                    if (result.done) {
+                        // Stream ended — check if we got the done event already
+                        return;
+                    }
+
+                    sseBuffer += decoder.decode(result.value, { stream: true });
+
+                    // Split on double newline (SSE event boundary)
+                    var parts = sseBuffer.split('\n\n');
+                    sseBuffer = parts.pop(); // Keep incomplete part
+
+                    for (var p = 0; p < parts.length; p++) {
+                        var block = parts[p];
+                        var lines = block.split('\n');
+                        var eventType = '';
+                        var dataStr = '';
+
+                        for (var l = 0; l < lines.length; l++) {
+                            var line = lines[l];
+                            if (line.startsWith('event: ')) {
+                                eventType = line.slice(7).trim();
+                            } else if (line.startsWith('data: ')) {
+                                dataStr = line.slice(6);
+                            }
+                        }
+
+                        if (eventType === 'item' && dataStr) {
+                            try {
+                                var item = JSON.parse(dataStr);
+                                allItems.push(item);
+                                // Render this single new item with animation
+                                var itemHtml = '<div class="extracted-item stream-enter">' +
+                                    '<div style="font-weight:600;">' + (item.medicine_name || 'Unknown') + '</div>' +
+                                    '<div class="text-sm text-muted">' + (item.company || '') + ' &middot; Batch: ' + (item.batch_number || '-') + ' &middot; Exp: ' + (item.expiry_date || '-') + '</div>' +
+                                    '<div class="text-sm">Qty: ' + (item.quantity || 0) + ' &middot; Buy: Rs ' + (item.purchase_price || 0) + (item.selling_price ? ' &middot; Sell: Rs ' + item.selling_price : '') + '</div>' +
+                                '</div>';
+                                container.insertAdjacentHTML('beforeend', itemHtml);
+                                // Update count
+                                document.getElementById('extractCount').textContent = allItems.length;
+                                status.innerHTML = '<span style="color:var(--accent); font-size:13px;">Extracting... <span id="extractCount">' + allItems.length + '</span> items found so far</span>';
+                            } catch (e) {
+                                // Partial item — skip
+                            }
+                        } else if (eventType === 'done') {
+                            // All items received
+                            extractedInvoiceData = { items: allItems };
+                            status.innerHTML = '<span style="color:var(--success); font-size:13px;">Found ' + allItems.length + ' item(s)</span>';
+                            document.getElementById('extractBtn').disabled = false;
+                            if (allItems.length > 0) {
+                                submitBtn.style.display = 'inline-flex';
+                            }
+                            return;
+                        } else if (eventType === 'error' && dataStr) {
+                            try {
+                                var errData = JSON.parse(dataStr);
+                                status.innerHTML = '<span style="color:var(--danger); font-size:13px;">' + (errData.message || 'Extraction failed') + '</span>';
+                            } catch (e) {
+                                status.innerHTML = '<span style="color:var(--danger); font-size:13px;">Extraction failed</span>';
+                            }
+                            document.getElementById('extractBtn').disabled = false;
+                            return;
+                        }
+                    }
+
+                    // Continue reading
+                    processStream();
+                }).catch(function(err) {
+                    status.innerHTML = '<span style="color:var(--danger); font-size:13px;">Error: ' + err.message + '</span>';
+                    document.getElementById('extractBtn').disabled = false;
+                });
+            }
+
+            processStream();
+        })
+        .catch(function(err) {
+            document.getElementById('extractBtn').disabled = false;
+            status.innerHTML = '<span style="color:var(--danger); font-size:13px;">Error: ' + err.message + '</span>';
+        });
+}
+
+
+
+// ── Submit Add Medicine (tab-aware) ───────────────────────
+function submitAddMedicine() {
+    var manualPane = document.getElementById('addModeManual');
+    var scanPane = document.getElementById('addModeScan');
+    var isManual = !manualPane.classList.contains('hidden');
+
+    if (isManual) {
+        // ── Manual mode: validate and submit typed fields ──
+        var medData = {
+            medicine_name: document.getElementById('addMedName').value,
+            generic_name: document.getElementById('addMedGeneric').value,
+            company: document.getElementById('addMedCompany').value,
+            category: document.getElementById('addMedCategory').value
+        };
+        if (!medData.medicine_name) { alert('Medicine name is required'); return; }
+
+        var hasBatch = !document.getElementById('batchFieldsFromInvoice').classList.contains('hidden');
+        var batchNum = document.getElementById('addMedBatchNumber').value;
+
+        api.post('/api/inventory', medData).then(function(r) {
+            if (r.error) { alert(r.error); return; }
+            if (hasBatch && batchNum) {
+                var batchData = {
+                    medicine_id: r.id,
+                    batch_number: batchNum,
+                    expiry_date: document.getElementById('addMedExpiry').value,
+                    purchase_price: parseFloat(document.getElementById('addMedPurchasePrice').value || '0'),
+                    selling_price: parseFloat(document.getElementById('addMedSellingPrice').value || '0'),
+                    quantity: parseInt(document.getElementById('addMedQty').value || '0')
+                };
+                api.post('/api/batches', batchData).then(function(br) {
+                    if (br.error) { alert('Medicine added but batch error: ' + br.error); }
+                    window.location.reload();
+                });
+            } else {
+                window.location.reload();
+            }
+        });
+    } else {
+        // ── Scan mode: bulk-add ALL extracted items ──
+        if (!extractedInvoiceData || !extractedInvoiceData.items.length) {
+            alert('No invoice data extracted. Upload and extract an invoice first.');
+            return;
+        }
+
+        var items = extractedInvoiceData.items;
+        var submitBtn = document.getElementById('addMedSubmitBtn');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = 'Adding...';
+
+        var added = 0;
+        var total = items.length;
+        var errors = [];
+
+        function addItemAtIndex(idx) {
+            if (idx >= total) {
+                // All done — show success message in the scan pane
+                var status = document.getElementById('extractStatus');
+                var msg = '\u2705 ' + added + ' medicine' + (added !== 1 ? 's' : '') + ' added to inventory';
+                if (errors.length) {
+                    msg += '<br><span style="color:var(--warning);">' + errors.length + ' error' + (errors.length !== 1 ? 's' : '') + ': ' + errors.join('; ') + '</span>';
+                }
+                status.innerHTML = '<div style="padding:16px; text-align:center; color:var(--success); font-weight:600; font-size:15px;">' + msg + '</div>';
+                document.getElementById('extractedItems').classList.add('hidden');
+                document.getElementById('invoicePreview').classList.add('hidden');
+                document.getElementById('extractBtn').style.display = 'none';
+                submitBtn.style.display = 'none';
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Add Medicines';
+                extractedInvoiceData = null;
+                // Keep the modal open so user sees the message, Cancel button closes it
+                return;
+            }
+
+            var item = items[idx];
+            if (!item || !item.medicine_name) {
+                errors.push('Item ' + (idx + 1) + ' missing name');
+                addItemAtIndex(idx + 1);
+                return;
+            }
+
+            var medData = {
+                medicine_name: item.medicine_name,
+                generic_name: item.generic_name || '',
+                company: item.company || '',
+                category: ''
+            };
+
+            api.post('/api/inventory', medData).then(function(r) {
+                if (r.error) {
+                    errors.push(item.medicine_name + ': ' + r.error);
+                    addItemAtIndex(idx + 1);
+                    return;
+                }
+
+                // Create batch if we have batch info
+                var hasBatchInfo = item.batch_number && item.expiry_date && (item.purchase_price || item.selling_price);
+                if (hasBatchInfo) {
+                    var batchData = {
+                        medicine_id: r.id,
+                        batch_number: item.batch_number || '',
+                        expiry_date: item.expiry_date,
+                        purchase_price: parseFloat(item.purchase_price || 0),
+                        selling_price: parseFloat(item.selling_price || item.purchase_price || 0),
+                        quantity: parseInt(item.quantity || 0)
+                    };
+                    // Normalize expiry date format
+                    if (batchData.expiry_date && batchData.expiry_date.match(/^(\d{2})\/(\d{4})$/)) {
+                        var parts = batchData.expiry_date.split('/');
+                        var lastDay = new Date(parseInt(parts[1]), parseInt(parts[0]), 0).getDate();
+                        batchData.expiry_date = parts[1] + '-' + parts[0].padStart(2,'0') + '-' + String(lastDay).padStart(2,'0');
+                    }
+                    if (batchData.expiry_date && batchData.expiry_date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                        api.post('/api/batches', batchData).then(function(br) {
+                            if (br.error) {
+                                errors.push(item.medicine_name + ' batch: ' + br.error);
+                            }
+                            added++;
+                            addItemAtIndex(idx + 1);
+                        });
+                    } else {
+                        added++;
+                        addItemAtIndex(idx + 1);
+                    }
+                } else {
+                    added++;
+                    addItemAtIndex(idx + 1);
+                }
+            });
+        }
+
+        addItemAtIndex(0);
+    }
+}
+
+function editMedicine(id, name, generic, company, category, minStock) {
+    document.getElementById('editMedId').value = id;
+    document.getElementById('editMedName').value = name;
+    document.getElementById('editMedGeneric').value = generic;
+    document.getElementById('editMedCompany').value = company;
+    document.getElementById('editMedCategory').value = category;
+    document.getElementById('editMedMinStock').value = minStock || 0;
+    openModal('editMedicineModal');
+}
+
+function submitEditMedicine() {
+    var id = document.getElementById('editMedId').value;
+    var data = {
+        medicine_name: document.getElementById('editMedName').value,
+        generic_name: document.getElementById('editMedGeneric').value,
+        company: document.getElementById('editMedCompany').value,
+        category: document.getElementById('editMedCategory').value,
+        minimum_stock: parseInt(document.getElementById('editMedMinStock').value || '0')
+    };
+    api.put('/api/inventory/' + id, data).then(function(r) {
+        if (r.error) { alert(r.error); return; }
+        window.location.reload();
+    });
+}
+
+function deleteMedicine(id, name) {
+    if (!confirm('Delete "' + name + '"? This will permanently remove it if it has no sales or purchase history.')) return;
+    api.del('/api/inventory/' + id).then(function(r) {
+        if (r.error) { alert(r.error); return; }
+        window.location.reload();
+    });
+}
+
+function openAddBatch(medId, medName) {
+    document.getElementById('batchMedId').value = medId;
+    document.getElementById('batchMedName').textContent = medName;
+    openModal('addBatchModal');
+}
+
+// ── Multi-select / Batch Delete ─────────────────────────
+var selectedIds = new Set();
+
+function toggleSelectAll(checked) {
+    var cbs = document.querySelectorAll('.med-checkbox');
+    cbs.forEach(function(cb) { cb.checked = checked; });
+    updateSelection();
+}
+
+function updateSelection() {
+    selectedIds.clear();
+    var cbs = document.querySelectorAll('.med-checkbox:checked');
+    cbs.forEach(function(cb) { selectedIds.add(cb.value); });
+    // Sync the Select All checkbox
+    var total = document.querySelectorAll('.med-checkbox').length;
+    document.getElementById('selectAll').checked = selectedIds.size === total;
+    var batchBar = document.getElementById('batchActions');
+    var countEl = document.getElementById('selectedCount');
+    if (selectedIds.size > 0) {
+        batchBar.classList.remove('hidden');
+        countEl.textContent = selectedIds.size + ' selected';
+    } else {
+        batchBar.classList.add('hidden');
+    }
+}
+
+function clearSelection() {
+    var cbs = document.querySelectorAll('.med-checkbox');
+    cbs.forEach(function(cb) { cb.checked = false; });
+    document.getElementById('selectAll').checked = false;
+    updateSelection();
+}
+
+function batchDelete() {
+    var count = selectedIds.size;
+    if (count === 0) return;
+    if (!confirm('Delete ' + count + ' selected medicine' + (count !== 1 ? 's' : '') + '? Items without sales/purchase history will be permanently removed.')) return;
+
+    var ids = Array.from(selectedIds);
+    var btn = document.querySelector('#batchActions .btn-danger');
+    btn.disabled = true;
+    btn.innerHTML = 'Deleting...';
+
+    api.post('/api/inventory/bulk-delete', { ids: ids }).then(function(r) {
+        if (r.error) { alert(r.error); btn.disabled = false; btn.innerHTML = 'Delete Selected'; return; }
+        window.location.reload();
+    }).catch(function(err) {
+        alert('Error: ' + err.message);
+        btn.disabled = false;
+        btn.innerHTML = 'Delete Selected';
+    });
+}
+
+function submitAddBatch() {
+    var data = {
+        medicine_id: parseInt(document.getElementById('batchMedId').value),
+        batch_number: document.getElementById('batchNumber').value,
+        expiry_date: document.getElementById('batchExpiry').value,
+        purchase_price: parseFloat(document.getElementById('batchPurchasePrice').value || '0'),
+        selling_price: parseFloat(document.getElementById('batchSellingPrice').value || '0'),
+        quantity: parseInt(document.getElementById('batchQty').value || '0')
+    };
+    if (!data.batch_number || !data.expiry_date) { alert('Batch number and expiry date are required'); return; }
+    api.post('/api/batches', data).then(function(r) {
+        if (r.error) { alert(r.error); return; }
+        window.location.reload();
+    });
+}
+</script>
+{% endblock %}

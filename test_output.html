@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Billing (POS) — Pharmacy</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <svg class="brand-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2L12 22M2 12L22 12M7 7L17 17M17 7L7 17"/>
+            </svg>
+            <span class="brand-text">Pharmacy</span>
+        </div>
+        <div class="sidebar-sep"></div>
+        <nav class="sidebar-nav">
+            
+                
+                
+                    <a href="/dashboard" class="nav-btn ">
+                        
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                        
+                        <span>Dashboard</span>
+                    </a>
+                
+            
+                
+                    <div class="nav-section">SALES</div>
+                
+                
+                    <a href="/billing" class="nav-btn active">
+                        
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="2"/><line x1="2" y1="9" x2="22" y2="9"/><line x1="9" y1="9" x2="9" y2="21"/></svg>
+                        
+                        <span>Billing (POS)</span>
+                    </a>
+                
+                    <a href="/sales-history" class="nav-btn ">
+                        
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg>
+                        
+                        <span>Sales History</span>
+                    </a>
+                
+            
+                
+                    <div class="nav-section">INVENTORY</div>
+                
+                
+                    <a href="/inventory" class="nav-btn ">
+                        
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7L12 3L4 7M20 7L12 11M20 7V17L12 21M12 11L4 7M12 11V21M4 7V17L12 21"/></svg>
+                        
+                        <span>Inventory</span>
+                    </a>
+                
+                    <a href="/suppliers" class="nav-btn ">
+                        
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+                        
+                        <span>Suppliers</span>
+                    </a>
+                
+            
+                
+                    <div class="nav-section">ALERTS</div>
+                
+                
+                    <a href="/expiry" class="nav-btn ">
+                        
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        
+                        <span>Expiry</span>
+                    </a>
+                
+                    <a href="/low-stock" class="nav-btn ">
+                        
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        
+                        <span>Low Stock</span>
+                    </a>
+                
+            
+                
+                
+                    <a href="/backup" class="nav-btn ">
+                        
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                        
+                        <span>Backup</span>
+                    </a>
+                
+                    <a href="/settings" class="nav-btn ">
+                        
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+                        
+                        <span>Settings</span>
+                    </a>
+                
+            
+        </nav>
+        <div class="sidebar-footer">
+            <span class="version">v1.0.0</span>
+        </div>
+    </aside>
+
+    <main class="main-area">
+        <header class="header">
+            <div class="header-content">
+                <h1 class="header-title">Billing (POS)</h1>
+                <p class="header-sub"></p>
+            </div>
+            <div class="header-actions">
+                <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+                    <svg class="icon-sun" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                    <svg class="icon-moon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+                </button>
+            </div>
+        </header>
+
+        <div class="content-area">
+            
+                
+            
+            
+<div class="pos-layout">
+
+  <!-- LEFT: Search + Results + Cart -->
+  <div class="pos-main">
+
+    <!-- Big Search -->
+    <div class="pos-search-wrap">
+      <input type="text" id="posSearch" class="pos-search" placeholder="Search medicine name..." autocomplete="off" autofocus>
+      <div class="pos-search-status" id="posSearchStatus"></div>
+    </div>
+
+    <!-- Search Results -->
+    <div id="posResults" class="pos-results"></div>
+
+    <!-- Current Bill -->
+    <div id="posCartSection" class="pos-cart-section hidden">
+      <div class="pos-cart-header">
+        <span>Current Bill</span>
+        <span class="pos-cart-count" id="posCartCount">0 items</span>
+      </div>
+      <div class="pos-cart-list" id="posCartList"></div>
+
+      <!-- Discount (hidden by default) -->
+      <div class="pos-discount-area">
+        <button class="pos-discount-toggle" id="posDiscountToggle" onclick="toggleDiscount()">+ Add discount</button>
+        <div class="pos-discount-input hidden" id="posDiscountInput">
+          <span>Discount:</span>
+          <input type="number" step="0.01" value="0" id="posDiscount" oninput="recalcTotal()" class="pos-discount-field">
+        </div>
+      </div>
+
+      <!-- Big Total -->
+      <div class="pos-total" id="posTotal">Rs 0.00</div>
+
+      <!-- Payment Buttons -->
+      <div class="pos-payment" id="posPayment">
+        <button class="pos-pay-btn pos-pay-cash" onclick="pay('Cash')">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/></svg>
+          Cash
+        </button>
+        <button class="pos-pay-btn pos-pay-qr" onclick="pay('QR')">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+          QR
+        </button>
+      </div>
+
+      <div class="pos-pay-spinner hidden" id="posPaySpinner">
+        <span class="spinner"></span> Processing...
+      </div>
+      <div class="pos-pay-error hidden" id="posPayError"></div>
+    </div>
+
+    <!-- Empty state -->
+    <div id="posEmpty" class="pos-empty">
+      <p>Loading available medicines...</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- Receipt Overlay (shown after sale) -->
+<div class="receipt-overlay hidden" id="receiptOverlay">
+  <div class="receipt-card" id="receiptCard">
+    <div id="receiptContent" class="receipt-print"></div>
+    <div class="receipt-actions">
+      <button class="btn btn-primary" onclick="window.print();" style="flex:1; justify-content:center; padding:14px;">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Print Receipt
+      </button>
+      <button class="btn btn-secondary" onclick="resetPOS()" style="flex:1; justify-content:center; padding:14px;">Next Customer</button>
+    </div>
+  </div>
+</div>
+
+        </div>
+    </main>
+
+    <script src="/static/js/app.js"></script>
+    
+<script>
+let billItems = [];
+let searchTimer = null;
+let allBatches = [];
+let lastSaleData = null;
+const vatRate = 13.0;
+
+// ── Load all medicines on page load ──────────────────────
+(function loadAllMedicines() {
+  api.get('/api/billing/search?q=').then(function(results) {
+    allBatches = results || [];
+    var empty = document.getElementById('posEmpty');
+    if (allBatches.length) {
+      empty.style.display = 'none';
+      renderResults(allBatches);
+    } else {
+      empty.innerHTML = '<p>No medicines in inventory yet</p><p style="font-size:13px; margin-top:4px;">Go to <a href="/inventory" style="color:var(--accent);">Inventory</a> to add medicines.</p>';
+    }
+  }).catch(function(err) {
+    document.getElementById('posEmpty').innerHTML = '<p style="color:var(--danger);">Failed to load inventory</p>';
+  });
+})();
+
+function renderResults(batches) {
+  var el = document.getElementById('posResults');
+  var status = document.getElementById('posSearchStatus');
+  if (!batches || !batches.length) {
+    el.innerHTML = '<div class="pos-no-results">No medicines found</div>';
+    status.textContent = '';
+    return;
+  }
+  status.textContent = batches.length + ' item' + (batches.length !== 1 ? 's' : '') + ' found';
+  el.innerHTML = batches.map(function(r) {
+    return '<div class="pos-result" onclick="addToBill(' + r.batch_id + ', ' + r.medicine_id + ', \\'' + r.medicine_name.replace(/'/g, "\\'") + '\\', ' + r.selling_price + ', ' + r.quantity + ')">' +
+      '<span class="pos-result-name">' + r.medicine_name + '</span>' +
+      '<span class="pos-result-price">Rs ' + r.selling_price.toFixed(2) + '</span>' +
+    '</div>';
+  }).join('');
+}
+
+document.getElementById('posSearch').addEventListener('input', function() {
+  clearTimeout(searchTimer);
+  var q = this.value.trim();
+  if (q.length < 1) {
+    renderResults(allBatches);
+    return;
+  }
+  searchTimer = setTimeout(function() {
+    api.get('/api/billing/search?q=' + encodeURIComponent(q)).then(function(results) {
+      renderResults(results || []);
+    });
+  }, 150);
+});
+
+// ── Add to bill (tap = qty 1, tap again = +1) ──────────
+function addToBill(batchId, medId, name, price, maxQty) {
+  var existing = null;
+  for (var i = 0; i < billItems.length; i++) {
+    if (billItems[i].batch_id === batchId) {
+      existing = billItems[i];
+      break;
+    }
+  }
+  if (existing) {
+    if (existing.quantity < maxQty) existing.quantity++;
+  } else {
+    billItems.push({ batch_id: batchId, medicine_id: medId, name: name, price: price, quantity: 1, maxQty: maxQty });
+  }
+  renderCart();
+}
+
+function removeFromBill(idx) {
+  billItems.splice(idx, 1);
+  renderCart();
+}
+
+function renderCart() {
+  var section = document.getElementById('posCartSection');
+  var list = document.getElementById('posCartList');
+  var countEl = document.getElementById('posCartCount');
+  var empty = document.getElementById('posEmpty');
+
+  if (!billItems.length) {
+    section.classList.add('hidden');
+    if (allBatches && allBatches.length) {
+      empty.innerHTML = '<p style="color:var(--text3);">Tap a medicine to add it to the bill</p>';
+    }
+    empty.style.display = '';
+    return;
+  }
+
+  section.classList.remove('hidden');
+  empty.style.display = 'none';
+  countEl.textContent = billItems.length + ' item' + (billItems.length !== 1 ? 's' : '');
+
+  list.innerHTML = billItems.map(function(item, idx) {
+    return '<div class="pos-cart-item">' +
+      '<div class="pos-cart-item-left" onclick="removeFromBill(' + idx + ')">' +
+        '<span class="pos-cart-name">' + item.name + '</span>' +
+        '<span class="pos-cart-qty">&times; ' + item.quantity + '</span>' +
+      '</div>' +
+      '<div class="pos-cart-item-right">' +
+        '<span class="pos-cart-line">Rs ' + (item.price * item.quantity).toFixed(2) + '</span>' +
+        '<button class="pos-cart-remove" onclick="event.stopPropagation(); removeFromBill(' + idx + ')">&times;</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  recalcTotal();
+}
+
+function recalcTotal() {
+  var subtotal = billItems.reduce(function(s, i) { return s + i.price * i.quantity; }, 0);
+  var discount = parseFloat(document.getElementById('posDiscount').value || '0');
+  var vat = subtotal * vatRate / 100;
+  var total = subtotal - discount + vat;
+  document.getElementById('posTotal').textContent = 'Rs ' + total.toFixed(2);
+}
+
+function toggleDiscount() {
+  var el = document.getElementById('posDiscountInput');
+  el.classList.toggle('hidden');
+  if (!el.classList.contains('hidden')) {
+    document.getElementById('posDiscount').focus();
+  }
+}
+
+// ── Payment (immediately completes sale) ────────────────
+function pay(method) {
+  if (!billItems.length) return;
+  var total = parseFloat(document.getElementById('posTotal').textContent.replace('Rs ', ''));
+
+  var payload = {
+    items: billItems.map(function(i) { return { batch_id: i.batch_id, quantity: i.quantity, selling_price: i.price, discount: 0 }; }),
+    payment_method: method,
+    discount: parseFloat(document.getElementById('posDiscount').value || '0'),
+    vat_rate: vatRate
+  };
+
+  // Show spinner, hide buttons
+  document.getElementById('posPayment').classList.add('hidden');
+  document.getElementById('posPaySpinner').classList.remove('hidden');
+
+  api.post('/api/billing/sale', payload).then(function(r) {
+    if (r.error) {
+      document.getElementById('posPayment').classList.remove('hidden');
+      document.getElementById('posPaySpinner').classList.add('hidden');
+      var errEl = document.getElementById('posPayError');
+      errEl.textContent = r.error;
+      errEl.classList.remove('hidden');
+      setTimeout(function() { errEl.classList.add('hidden'); }, 4000);
+      return;
+    }
+
+    // Store sale data for receipt
+    lastSaleData = {
+      bill_number: r.bill_number,
+      total: r.total,
+      items: billItems.map(function(i) { return { name: i.name, price: i.price, quantity: i.quantity, subtotal: i.price * i.quantity }; }),
+      subtotal: billItems.reduce(function(s, i) { return s + i.price * i.quantity; }, 0),
+      discount: payload.discount,
+      vat_amount: billItems.reduce(function(s, i) { return s + i.price * i.quantity; }, 0) * vatRate / 100,
+      vat_rate: vatRate,
+      payment_method: method,
+      date: new Date()
+    };
+
+    showReceipt();
+  });
+}
+
+function showReceipt() {
+  var d = lastSaleData;
+  if (!d) return;
+
+  var dateStr = d.date.getFullYear() + '-' +
+    String(d.date.getMonth() + 1).padStart(2, '0') + '-' +
+    String(d.date.getDate()).padStart(2, '0') + ' ' +
+    String(d.date.getHours()).padStart(2, '0') + ':' +
+    String(d.date.getMinutes()).padStart(2, '0');
+
+  var itemsHtml = d.items.map(function(i) {
+    return '<tr>' +
+      '<td style="padding:3px 0;">' + i.name + '</td>' +
+      '<td style="padding:3px 0; text-align:center;">' + i.quantity + '</td>' +
+      '<td style="padding:3px 0; text-align:right;">Rs ' + i.price.toFixed(2) + '</td>' +
+      '<td style="padding:3px 0; text-align:right;">Rs ' + i.subtotal.toFixed(2) + '</td>' +
+    '</tr>';
+  }).join('');
+
+  var html =
+    '<div style="text-align:center; margin-bottom:12px;">' +
+      '<h2 style="margin:0 0 2px; font-size:18px; font-weight:700;">Krishna Pharmacy</h2>' +
+      '<div style="font-size:11px;">' + dateStr + '</div>' +
+      '<div style="font-size:11px;">Bill: <strong>' + d.bill_number + '</strong></div>' +
+      '<div style="font-size:11px;">Payment: ' + d.payment_method + '</div>' +
+    '</div>' +
+    '<hr style="border:none; border-top:1px dashed #999; margin:6px 0;">' +
+    '<table style="width:100%; border-collapse:collapse; font-size:12px;">' +
+      '<thead><tr style="font-weight:600;">' +
+        '<th style="text-align:left; padding:2px 0; border-bottom:1px solid #999;">Item</th>' +
+        '<th style="text-align:center; padding:2px 0; border-bottom:1px solid #999;">Qty</th>' +
+        '<th style="text-align:right; padding:2px 0; border-bottom:1px solid #999;">Price</th>' +
+        '<th style="text-align:right; padding:2px 0; border-bottom:1px solid #999;">Total</th>' +
+      '</tr></thead>' +
+      '<tbody>' + itemsHtml + '</tbody>' +
+    '</table>' +
+    '<hr style="border:none; border-top:1px dashed #999; margin:6px 0;">' +
+    '<div style="display:flex; justify-content:space-between;"><span>Subtotal</span><span>Rs ' + d.subtotal.toFixed(2) + '</span></div>';
+
+  if (d.discount > 0) {
+    html += '<div style="display:flex; justify-content:space-between;"><span>Discount</span><span>-Rs ' + d.discount.toFixed(2) + '</span></div>';
+  }
+  if (d.vat_rate > 0) {
+    html += '<div style="display:flex; justify-content:space-between;"><span>VAT (' + d.vat_rate + '%)</span><span>Rs ' + d.vat_amount.toFixed(2) + '</span></div>';
+  }
+  html += '<div style="display:flex; justify-content:space-between; font-weight:700; font-size:16px; margin-top:8px; padding-top:8px; border-top:1px solid #999;"><span>Total</span><span>Rs ' + d.total.toFixed(2) + '</span></div>' +
+    '<div style="text-align:center; margin-top:10px; font-size:11px;">Thank you for your purchase!</div>';
+
+  document.getElementById('receiptContent').innerHTML = html;
+  document.getElementById('receiptOverlay').classList.remove('hidden');
+
+  // Refresh stock in background
+  api.get('/api/billing/search?q=').then(function(results) {
+    allBatches = results || [];
+  });
+}
+
+function resetPOS() {
+  document.getElementById('receiptOverlay').classList.add('hidden');
+  billItems = [];
+  document.getElementById('posDiscount').value = '0';
+  document.getElementById('posDiscountInput').classList.add('hidden');
+  document.getElementById('posPayment').classList.remove('hidden');
+  document.getElementById('posPaySpinner').classList.add('hidden');
+  renderCart();
+  renderResults(allBatches);
+  document.getElementById('posSearch').value = '';
+  document.getElementById('posSearch').focus();
+}
+</script>
+
+</body>
+</html>
