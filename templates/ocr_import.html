@@ -34,7 +34,7 @@ function processOCR() {
         document.getElementById('ocrResult').innerHTML = '<div class="flash flash-error">Please paste OCR text or upload a file</div>';
         return;
     }
-    document.getElementById('ocrResult').innerHTML = '<div class="text-muted">Processing... (AI parsing requires Groq API key in Settings)</div>';
+    document.getElementById('ocrResult').innerHTML = '<div class="text-muted">Processing... (AI parsing requires an OpenRouter API key in Settings)</div>';
 }
 </script>
 {% endblock %}

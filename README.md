@@ -77,11 +77,11 @@ The billing engine sorts available batches by **expiry date ascending**, encoura
 
 ## AI Invoice Import (optional)
 
-1. Get a free API key from [Groq Console](https://console.groq.com) (free tier available)
-2. Go to **Settings → AI/OCR** and paste your Groq API key
+1. Get a free API key from [OpenRouter](https://openrouter.ai/keys) (free tier available)
+2. Go to **Settings → AI / OCR** and paste your OpenRouter API key
 3. In **Inventory**, click **Add Medicine** → switch to **Scan Invoice** tab → upload invoice image/PDF
 4. The AI extracts medicine names, batch numbers, expiry dates, quantities, purchase & selling prices
-5. Click any extracted item to auto-fill the medicine form — batch fields appear automatically
+5. Click "Add Medicines" to bulk-add all extracted items to your inventory
 
 **Supported file types:** JPG, PNG, WebP, BMP, TIFF, PDF
 

@@ -20,6 +20,7 @@ class Medicine(Base):
     generic_name = Column(String(200), nullable=True)
     company = Column(String(200), nullable=True)
     category = Column(String(100), nullable=True)
+    med_form = Column(String(50), nullable=True)
     barcode = Column(String(50), nullable=True, unique=True)
     rack_location = Column(String(50), nullable=True)
     minimum_stock = Column(Integer, default=0)
@@ -120,7 +121,7 @@ class User(Base):
 class Settings(Base):
     __tablename__ = "settings"
     id = Column(Integer, primary_key=True)
-    pharmacy_name = Column(String(200), default="My Pharmacy")
+    pharmacy_name = Column(String(200), default="Krisha Pharma")
     address = Column(String(500), default="")
     phone = Column(String(20), default="")
     email = Column(String(200), default="")
@@ -147,6 +148,4 @@ class Settings(Base):
     play_error_sound = Column(String(3), default="No")
     barcode_label_width = Column(String(20), default="50x30mm")
     barcode_label_font_size = Column(Integer, default=8)
-    groq_api_key = Column(String(500), default="")
-    groq_model = Column(String(100), default="meta-llama/llama-4-scout-17b-16e-instruct")
-    ocr_engine = Column(String(50), default="Tesseract")
+    openrouter_api_key = Column(String(500), nullable=True, default="")

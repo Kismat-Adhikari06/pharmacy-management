@@ -11,6 +11,7 @@
         <button class="settings-nav-btn" onclick="showSection('appearance', this)">Appearance</button>
         <button class="settings-nav-btn" onclick="showSection('backup', this)">Backup</button>
         <button class="settings-nav-btn" onclick="showSection('ai', this)">AI / OCR</button>
+        <button class="settings-nav-btn" onclick="showSection('import', this)">Import Data</button>
     </div>
 
     <form method="POST">
@@ -97,15 +98,27 @@
 
         <div class="settings-section hidden" id="section-ai">
             <h3>AI Invoice Import</h3>
-            <p class="text-sm text-muted" style="margin-bottom:16px;">Used by the AI invoice scanner to extract medicine data from photos. Get a free key at <a href="https://console.groq.com" target="_blank" style="color:var(--accent);">console.groq.com</a></p>
+            <p class="text-sm text-muted" style="margin-bottom:16px;">Used by the AI invoice scanner to extract medicine data from invoice photos. Powered by OpenRouter.</p>
             <div class="form-group">
-                <label class="form-label">Groq API Key</label>
-                <input type="password" class="form-input" name="groq_api_key" value="{{ settings.groq_api_key or '' }}" placeholder="gsk_...">
+                <label class="form-label">OpenRouter API Key</label>
+                <input type="password" class="form-input" name="openrouter_api_key" value="{{ settings.openrouter_api_key or '' }}" placeholder="sk-or-v1-...">
+                <p class="text-sm text-muted" style="margin-top:4px;">Get a free key at <a href="https://openrouter.ai/keys" target="_blank" style="color:var(--accent);">openrouter.ai/keys</a></p>
             </div>
+        </div>
+
+        <div class="settings-section hidden" id="section-import">
+            <h3>Import Data from JSON</h3>
+            <p class="text-sm text-muted" style="margin-bottom:16px;">Paste your invoice JSON below. Format must match exactly — every item needs <code>item_description</code>, <code>batch</code>, <code>expiry_date</code> (YYYY-MM-DD), <code>qty</code>, <code>rate</code>, and <code>mrp</code>. If anything is wrong it will reject the whole import.</p>
             <div class="form-group">
-                <label class="form-label">Model</label>
-                <input type="text" class="form-input" name="groq_model" value="{{ settings.groq_model or '' }}" placeholder="meta-llama/llama-4-scout-17b-16e-instruct">
+                <label class="form-label">JSON Data</label>
+                <textarea id="importJsonInput" class="form-input" style="height:300px; font-family:monospace; font-size:12px; resize:vertical;" placeholder='{"items": [{"item_description": "Paracetamol 500mg", "batch": "PCM2201", "expiry_date": "2027-06-30", "qty": 200, "rate": 1.50, "amount": 300.00, "mrp": 2.50}]}'></textarea>
             </div>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <button type="button" class="btn btn-primary" onclick="importJsonData()">Import to Inventory</button>
+                <button type="button" class="btn" style="background:var(--surface); color:var(--text);" onclick="document.getElementById('importJsonInput').value=''">Clear</button>
+                <span id="importJsonStatus" class="text-sm" style="margin-left:10px;"></span>
+            </div>
+            <div id="importJsonErrors" style="margin-top:12px; display:none;"></div>
         </div>
 
         <div style="margin-top:20px;">
@@ -122,6 +135,52 @@ function showSection(name, btn) {
     document.querySelectorAll('.settings-nav-btn').forEach(function(b) { b.classList.remove('active'); });
     document.getElementById('section-' + name).classList.remove('hidden');
     btn.classList.add('active');
+}
+
+function importJsonData() {
+    var input = document.getElementById('importJsonInput');
+    var status = document.getElementById('importJsonStatus');
+    var errBox = document.getElementById('importJsonErrors');
+    var raw = input.value.trim();
+
+    if (!raw) { status.innerHTML = '<span style="color:var(--danger);">Paste JSON data first.</span>'; return; }
+
+    var data;
+    try { data = JSON.parse(raw); } catch(e) {
+        status.innerHTML = '<span style="color:var(--danger);">Invalid JSON: ' + e.message + '</span>';
+        errBox.style.display = 'none';
+        return;
+    }
+
+    status.innerHTML = '<span style="color:var(--accent);">Importing...</span>';
+    errBox.style.display = 'none';
+
+    fetch('/api/import-json', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(r) {
+        if (r.error) {
+            status.innerHTML = '<span style="color:var(--danger);">Import failed.</span>';
+            var html = '<div style="background:var(--surface); border:1px solid var(--danger); border-radius:6px; padding:12px; max-height:300px; overflow-y:auto;">';
+            html += '<div style="font-weight:600; margin-bottom:6px; color:var(--danger);">' + r.error + '</div>';
+            if (r.details && r.details.length) {
+                r.details.forEach(function(d) { html += '<div style="font-size:12px; color:var(--text); padding:2px 0;">- ' + d + '</div>'; });
+            }
+            html += '</div>';
+            errBox.innerHTML = html;
+            errBox.style.display = 'block';
+        } else {
+            status.innerHTML = '<span style="color:var(--success);">' + r.message + '</span>';
+            errBox.style.display = 'none';
+            input.value = '';
+        }
+    })
+    .catch(function(e) {
+        status.innerHTML = '<span style="color:var(--danger);">Network error: ' + e.message + '</span>';
+    });
 }
 </script>
 {% endblock %}
