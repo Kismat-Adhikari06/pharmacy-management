@@ -94,6 +94,7 @@ class Sale(Base):
     discount = Column(Float, default=0.0)
     vat_amount = Column(Float, default=0.0)
     payment_method = Column(String(20), nullable=False)
+    patient_name = Column(String(200), nullable=True)
     items = relationship("SaleItem", back_populates="sale", cascade="all, delete-orphan")
 
 

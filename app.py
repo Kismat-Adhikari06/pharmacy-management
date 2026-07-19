@@ -1,11 +1,17 @@
 """Flask web application - pharmacy management system."""
 from __future__ import annotations
 
+import sys
+import os
 import shutil
 from pathlib import Path
 from datetime import date, datetime, timedelta
 
-ROOT = Path(__file__).resolve().parent
+# In frozen exe, use the exe's directory; otherwise use the source directory
+if getattr(sys, "frozen", False):
+    ROOT = Path(os.path.dirname(sys.executable))
+else:
+    ROOT = Path(__file__).resolve().parent
 
 from flask import (
     Flask, render_template, request, redirect, url_for,
@@ -787,6 +793,7 @@ def api_billing_sale():
         payment_method = data.get("payment_method", "Cash")
         discount = float(data.get("discount", 0))
         vat_rate = float(data.get("vat_rate", 0))
+        patient_name = data.get("patient_name", "").strip() or None
 
         today = _today()
         date_str = today.strftime("%Y%m%d")
@@ -830,6 +837,7 @@ def api_billing_sale():
             discount=discount,
             vat_amount=vat_amount,
             payment_method=payment_method,
+            patient_name=patient_name,
         )
         db.add(sale)
         db.flush()
@@ -911,6 +919,7 @@ def api_sale_detail(sale_id):
             "discount": sale.discount,
             "vat_amount": sale.vat_amount,
             "payment_method": sale.payment_method,
+            "patient_name": sale.patient_name or "",
             "items": items,
         })
     finally:

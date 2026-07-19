@@ -1,11 +1,21 @@
 """Database connection — SQLAlchemy session for the Flask web app."""
 from __future__ import annotations
 
+import sys
+import os
 import logging
 from pathlib import Path
 from contextlib import contextmanager
 
-ROOT = Path(__file__).resolve().parent
+# In frozen exe, use AppData for persistent data; otherwise use source directory
+if getattr(sys, "frozen", False):
+    ROOT = Path(os.path.dirname(sys.executable))
+    # Persistent data lives in %APPDATA%/Pharmacy so it survives reinstalls
+    DATA_DIR = Path(os.environ.get("APPDATA", ROOT)) / "Pharmacy"
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+else:
+    ROOT = Path(__file__).resolve().parent
+    DATA_DIR = ROOT / "data"
 
 from sqlalchemy import create_engine, event, inspect as sa_inspect, text
 from sqlalchemy.orm import sessionmaker, Session
@@ -14,7 +24,7 @@ from models import Base
 
 logger = logging.getLogger(__name__)
 
-DB_PATH = ROOT / "data" / "pharmacy.db"
+DB_PATH = DATA_DIR / "pharmacy.db"
 DB_URL = f"sqlite:///{DB_PATH}"
 
 engine = create_engine(

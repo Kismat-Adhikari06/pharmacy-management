@@ -19,6 +19,7 @@
                 <tr>
                     <th>Bill #</th>
                     <th>Date</th>
+                    <th>Patient</th>
                     <th class="text-right">Amount</th>
                     <th class="text-right">Discount</th>
                     <th class="text-right">VAT</th>
@@ -32,6 +33,7 @@
                 <tr>
                     <td class="font-mono text-sm">{{ s.bill_number }}</td>
                     <td class="text-sm">{{ s.sale_date.strftime('%Y-%m-%d %H:%M') if s.sale_date else '-' }}</td>
+                    <td class="text-sm">{{ s.patient_name or '-' }}</td>
                     <td class="text-right font-mono text-sm">Rs {{ "{:,.2f}".format(s.total_amount + s.discount - s.vat_amount) }}</td>
                     <td class="text-right font-mono text-sm">{{ "{:,.2f}".format(s.discount) }}</td>
                     <td class="text-right font-mono text-sm">{{ "{:,.2f}".format(s.vat_amount) }}</td>
@@ -77,6 +79,9 @@ function viewSale(id) {
         });
         html += '</tbody></table>';
         html += '<div style="margin-top:16px; border-top:1px solid var(--border); padding-top:12px;">';
+        if (r.patient_name) {
+            html += '<div class="summary-row"><span>Patient</span><span>' + r.patient_name + '</span></div>';
+        }
         html += '<div class="summary-row"><span>Date</span><span>' + r.sale_date + '</span></div>';
         html += '<div class="summary-row"><span>Payment</span><span>' + r.payment_method + '</span></div>';
         html += '<div class="summary-row"><span>Discount</span><span class="font-mono">Rs ' + r.discount.toFixed(2) + '</span></div>';
