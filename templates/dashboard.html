@@ -4,6 +4,22 @@
 {% block page_sub %}Overview of your pharmacy{% endblock %}
 
 {% block content %}
+
+<div class="dashboard-actions">
+    <a href="/billing" class="dashboard-action-btn dashboard-action-primary">
+        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="2"/><line x1="2" y1="9" x2="22" y2="9"/><line x1="9" y1="9" x2="9" y2="21"/></svg>
+        <span>Start Selling</span>
+    </a>
+    <a href="/inventory" class="dashboard-action-btn">
+        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7L12 3L4 7M20 7L12 11M20 7V17L12 21M12 11L4 7M12 11V21M4 7V17L12 21"/></svg>
+        <span>Inventory</span>
+    </a>
+    <a href="/sales-history" class="dashboard-action-btn">
+        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg>
+        <span>Sales History</span>
+    </a>
+</div>
+
 <div class="stats-grid">
     <a href="/billing" class="stat-card stat-card-link">
         <div class="stat-icon blue">
@@ -118,4 +134,50 @@
     <div class="table-empty">No sales yet. Start billing to see recent transactions here.</div>
     {% endif %}
 </div>
+
+<!-- Welcome guide (first visit only) -->
+<div class="welcome-overlay hidden" id="welcomeOverlay">
+    <div class="welcome-card">
+        <h2 style="margin:0 0 6px; font-size:22px;">Welcome to Krisha Pharma!</h2>
+        <p style="color:var(--text3); margin:0 0 20px; font-size:14px;">Here's how to get started:</p>
+        <div class="welcome-steps">
+            <div class="welcome-step">
+                <div class="welcome-step-num">1</div>
+                <div>
+                    <strong>Sell Medicines</strong>
+                    <p>Click "Start Selling" above. Search for a medicine, tap to add, set quantity, and hit Cash or QR.</p>
+                </div>
+            </div>
+            <div class="welcome-step">
+                <div class="welcome-step-num">2</div>
+                <div>
+                    <strong>Add Stock</strong>
+                    <p>Go to Inventory to add new medicines and batches. You can also scan invoices with AI.</p>
+                </div>
+            </div>
+            <div class="welcome-step">
+                <div class="welcome-step-num">3</div>
+                <div>
+                    <strong>Track Everything</strong>
+                    <p>Dashboard shows daily sales, low stock alerts, and recent transactions at a glance.</p>
+                </div>
+            </div>
+        </div>
+        <button class="btn btn-primary" onclick="dismissWelcome()" style="width:100%; padding:14px; font-size:16px; margin-top:16px; border-radius:10px;">Got it!</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+    if (!localStorage.getItem('pharmacy-welcomed')) {
+        document.getElementById('welcomeOverlay').classList.remove('hidden');
+    }
+})();
+function dismissWelcome() {
+    localStorage.setItem('pharmacy-welcomed', '1');
+    document.getElementById('welcomeOverlay').classList.add('hidden');
+}
+</script>
 {% endblock %}

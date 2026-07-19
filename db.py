@@ -74,7 +74,13 @@ def init_db() -> None:
                 nullable = "" if col.nullable else " NOT NULL"
                 default = ""
                 if col.default is not None:
-                    default = f" DEFAULT {col.default.arg}"
+                    val = col.default.arg
+                    if isinstance(val, str) and val == "":
+                        default = " DEFAULT ''"
+                    elif val is None:
+                        default = " DEFAULT NULL"
+                    else:
+                        default = f" DEFAULT '{val}'" if isinstance(val, str) else f" DEFAULT {val}"
                 elif not col.nullable:
                     default = " DEFAULT ''"
                 ddl = f"ALTER TABLE [{table_name}] ADD COLUMN [{col.name}] {col_type}{nullable}{default}"

@@ -54,11 +54,6 @@
         <span class="spinner"></span> Processing...
       </div>
       <div class="pos-pay-error hidden" id="posPayError"></div>
-
-      <button class="pos-undo-btn" onclick="undoLastSale()" title="Undo last sale">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
-        Undo Last Sale
-      </button>
     </div>
 
     <!-- Empty state -->
@@ -119,13 +114,14 @@ function renderResults(batches) {
   }
   status.textContent = batches.length + ' item' + (batches.length !== 1 ? 's' : '') + ' found';
   el.innerHTML = batches.map(function(r) {
+    var formLine = r.med_form ? '<span class="pos-result-generic" style="color:var(--accent);">' + r.med_form + '</span>' : '';
     var genericLine = r.generic_name ? '<span class="pos-result-generic">' + r.generic_name + '</span>' : '';
     var companyLine = r.company ? '<span class="pos-result-company">' + r.company + '</span>' : '';
     var batchLine = '<span class="pos-result-batch">Batch: ' + (r.batch_number || '-') + ' &middot; ' + (r.expiry_status || '') + '</span>';
-    return '<div class="pos-result" data-batch="' + r.batch_id + '" data-med="' + r.medicine_id + '" data-name="' + r.medicine_name.replace(/"/g, '&quot;') + '" data-generic="' + (r.generic_name || '').replace(/"/g, '&quot;') + '" data-price="' + r.selling_price + '" data-qty="' + r.quantity + '">' +
+    return '<div class="pos-result" data-batch="' + r.batch_id + '" data-med="' + r.medicine_id + '" data-name="' + r.medicine_name.replace(/"/g, '&quot;') + '" data-generic="' + (r.generic_name || '').replace(/"/g, '&quot;') + '" data-price="' + r.selling_price + '" data-qty="' + r.quantity + '" data-batchno="' + (r.batch_number || '').replace(/"/g, '&quot;') + '">' +
       '<div class="pos-result-info">' +
         '<span class="pos-result-name">' + r.medicine_name + '</span>' +
-        genericLine + companyLine + batchLine +
+        formLine + genericLine + companyLine + batchLine +
       '</div>' +
       '<span class="pos-result-price">Rs ' + r.selling_price.toFixed(2) + '</span>' +
     '</div>';
@@ -142,7 +138,8 @@ document.getElementById('posResults').addEventListener('click', function(e) {
       row.getAttribute('data-name'),
       row.getAttribute('data-generic'),
       parseFloat(row.getAttribute('data-price')),
-      parseInt(row.getAttribute('data-qty'))
+      parseInt(row.getAttribute('data-qty')),
+      row.getAttribute('data-batchno')
     );
   }
 });
@@ -162,7 +159,7 @@ document.getElementById('posSearch').addEventListener('input', function() {
 });
 
 // ── Add to bill (tap = qty 1, tap again = +1) ──────────
-function addToBill(batchId, medId, name, generic, price, maxQty) {
+function addToBill(batchId, medId, name, generic, price, maxQty, batchNumber) {
   var existing = null;
   for (var i = 0; i < billItems.length; i++) {
     if (billItems[i].batch_id === batchId) {
@@ -173,7 +170,7 @@ function addToBill(batchId, medId, name, generic, price, maxQty) {
   if (existing) {
     if (existing.quantity < maxQty) existing.quantity++;
   } else {
-    billItems.push({ batch_id: batchId, medicine_id: medId, name: name, generic: generic, price: price, quantity: 1, maxQty: maxQty });
+    billItems.push({ batch_id: batchId, medicine_id: medId, name: name, generic: generic, price: price, quantity: 1, maxQty: maxQty, batch_number: batchNumber || '' });
   }
   renderCart();
 }
@@ -200,18 +197,6 @@ function setQty(idx, val) {
   if (q > billItems[idx].maxQty) q = billItems[idx].maxQty;
   billItems[idx].quantity = q;
   renderCart();
-}
-
-function undoLastSale() {
-  if (!confirm('Undo the last sale? This will restore the stock.')) return;
-  api.post('/api/billing/undo-last', {}).then(function(r) {
-    if (r.error) { alert(r.error); return; }
-    alert('Sale ' + r.bill_number + ' has been undone.');
-    api.get('/api/billing/search?q=').then(function(results) {
-      allBatches = results || [];
-      renderResults(allBatches);
-    });
-  });
 }
 
 function removeFromBill(idx) {
@@ -251,7 +236,10 @@ function renderCart() {
         '</div>' +
       '</div>' +
       '<div class="pos-cart-item-right">' +
-        '<span class="pos-cart-line">Rs ' + (item.price * item.quantity).toFixed(2) + '</span>' +
+        '<div class="pos-cart-calc">' +
+          '<span class="pos-cart-unit">Rs ' + item.price.toFixed(2) + ' × ' + item.quantity + '</span>' +
+          '<span class="pos-cart-line">Rs ' + (item.price * item.quantity).toFixed(2) + '</span>' +
+        '</div>' +
         '<button class="pos-cart-remove" onclick="event.stopPropagation(); removeFromBill(' + idx + ')">&times;</button>' +
       '</div>' +
     '</div>';
@@ -307,7 +295,7 @@ function pay(method) {
     lastSaleData = {
       bill_number: r.bill_number,
       total: r.total,
-      items: billItems.map(function(i) { return { name: i.name, price: i.price, quantity: i.quantity, subtotal: i.price * i.quantity }; }),
+      items: billItems.map(function(i) { return { name: i.name, price: i.price, quantity: i.quantity, subtotal: i.price * i.quantity, batch_number: i.batch_number || '' }; }),
       subtotal: billItems.reduce(function(s, i) { return s + i.price * i.quantity; }, 0),
       discount: payload.discount,
       vat_amount: billItems.reduce(function(s, i) { return s + i.price * i.quantity; }, 0) * vatRate / 100,
@@ -331,8 +319,9 @@ function showReceipt() {
     String(d.date.getMinutes()).padStart(2, '0');
 
   var itemsHtml = d.items.map(function(i) {
+    var batchLabel = i.batch_number ? '<div style="font-size:10px; color:#999;">Batch: ' + i.batch_number + '</div>' : '';
     return '<tr>' +
-      '<td style="padding:4px 0; border-bottom:1px dashed #eee;">' + i.name + '</td>' +
+      '<td style="padding:4px 0; border-bottom:1px dashed #eee;">' + i.name + batchLabel + '<div style="font-size:10px; color:#888;">Rs ' + i.price.toFixed(2) + ' × ' + i.quantity + '</div></td>' +
       '<td style="padding:4px 0; text-align:center; border-bottom:1px dashed #eee;">' + i.quantity + '</td>' +
       '<td style="padding:4px 0; text-align:right; border-bottom:1px dashed #eee;">Rs ' + i.subtotal.toFixed(2) + '</td>' +
     '</tr>';
@@ -340,19 +329,22 @@ function showReceipt() {
 
   var html =
     '<div style="text-align:center; margin-bottom:16px;">' +
-      '<div style="font-size:20px; font-weight:800; letter-spacing:1px; color:#111;">KRISHNA PHARMACY</div>' +
-      '<div style="font-size:11px; color:#666; margin-top:4px;">' + dateStr + '</div>' +
+      '<div style="font-size:20px; font-weight:800; letter-spacing:1px; color:#111;">KRISHA PHARMA</div>' +
+      '<div style="font-size:11px; color:#666; margin-top:2px;">Gongabu, Ganesthan</div>' +
+      '<div style="font-size:11px; color:#555; margin-top:2px; display:flex; justify-content:space-between; padding:0 12px;"><span>DDA No: 17443</span><span>PAN No: 603290682</span></div>' +
+      '<div style="font-size:11px; color:#555; margin-top:2px;">Ph: 9843453627</div>' +
     '</div>' +
-    '<div style="display:flex; justify-content:space-between; font-size:11px; color:#555; margin-bottom:8px;">' +
-      '<span>Bill: <strong style="color:#111;">' + d.bill_number + '</strong></span>' +
-      '<span>' + d.payment_method + '</span>' +
+    '<div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; color:#555; margin-bottom:8px;">' +
+      '<span>Bill: <strong style="color:#111;">' + d.bill_number.split('-').pop() + '</strong></span>' +
+      '<span style="font-weight:800; font-size:13px; color:#111;">' + d.payment_method + '</span>' +
+      '<span>' + dateStr + '</span>' +
     '</div>' +
     '<hr style="border:none; border-top:1px dashed #ccc; margin:8px 0;">' +
     '<table style="width:100%; border-collapse:collapse; font-size:12px;">' +
       '<thead><tr style="font-weight:600; color:#999;">' +
-        '<th style="text-align:left; padding:2px 0 6px; border-bottom:1px dashed #ddd;">Item</th>' +
-        '<th style="text-align:center; padding:2px 0 6px; border-bottom:1px dashed #ddd;">Qty</th>' +
-        '<th style="text-align:right; padding:2px 0 6px; border-bottom:1px dashed #ddd;">Total</th>' +
+        '<th style="text-align:left; padding:2px 0 6px; border-bottom:1px dashed #ddd; background:transparent; color:#999;">Item</th>' +
+        '<th style="text-align:center; padding:2px 0 6px; border-bottom:1px dashed #ddd; background:transparent; color:#999;">Qty</th>' +
+        '<th style="text-align:right; padding:2px 0 6px; border-bottom:1px dashed #ddd; background:transparent; color:#999;">Total</th>' +
       '</tr></thead>' +
       '<tbody>' + itemsHtml + '</tbody>' +
     '</table>' +
@@ -370,7 +362,8 @@ function showReceipt() {
     '<div style="display:flex; justify-content:space-between; font-weight:800; font-size:18px; color:#111;"><span>TOTAL</span><span>Rs ' + d.total.toFixed(2) + '</span></div>' +
     '<hr style="border:none; border-top:2px solid #111; margin:10px 0;">' +
     '<div style="text-align:center; margin-top:12px; font-size:11px; color:#888;">Thank you for your purchase!</div>' +
-    '<div style="text-align:center; margin-top:4px; font-size:10px; color:#aaa;">Get well soon :)</div>';
+    '<div style="text-align:center; margin-top:4px; font-size:10px; color:#aaa;">Get well soon :)</div>' +
+    '<div style="text-align:center; margin-top:6px; font-size:11px; color:#555;">Ph: 9843453627</div>';
 
   document.getElementById('receiptContent').innerHTML = html;
   document.getElementById('receiptOverlay').classList.remove('hidden');

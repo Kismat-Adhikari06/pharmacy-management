@@ -164,9 +164,9 @@ function viewPurchase(id) {
         let html = '<div class="summary-row"><span>Supplier</span><span>' + r.supplier_name + '</span></div>';
         html += '<div class="summary-row"><span>Date</span><span>' + r.purchase_date + '</span></div>';
         html += '<div class="summary-row"><span>Total</span><span class="font-mono" style="font-weight:700;">Rs ' + r.total_amount.toFixed(2) + '</span></div>';
-        html += '<table style="width:100%; margin-top:12px;"><thead><tr><th>Medicine</th><th>Batch</th><th class="text-right">Qty</th><th class="text-right">Price</th></tr></thead><tbody>';
+        html += '<table style="width:100%; margin-top:12px;"><thead><tr><th>Medicine</th><th>Batch</th><th class="text-right">Qty</th><th class="text-right">Price</th><th class="text-right">Total</th></tr></thead><tbody>';
         r.items.forEach(function(i) {
-            html += '<tr><td>' + i.medicine_name + '</td><td class="font-mono text-sm">' + i.batch_number + '</td><td class="text-right">' + i.quantity + '</td><td class="text-right font-mono">Rs ' + i.purchase_price.toFixed(2) + '</td></tr>';
+            html += '<tr><td>' + i.medicine_name + '</td><td class="font-mono text-sm">' + i.batch_number + '</td><td class="text-right">' + i.quantity + '</td><td class="text-right font-mono">Rs ' + i.purchase_price.toFixed(2) + '</td><td class="text-right font-mono" style="font-size:12px;"><span style="color:var(--text3);">Rs ' + i.purchase_price.toFixed(2) + ' × ' + i.quantity + '</span> = <strong>Rs ' + (i.purchase_price * i.quantity).toFixed(2) + '</strong></td></tr>';
         });
         html += '</tbody></table>';
         if (r.notes) html += '<div class="mt-4 text-sm text-muted">Notes: ' + r.notes + '</div>';

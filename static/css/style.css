@@ -124,6 +124,7 @@ body {
     align-items: center;
     gap: 10px;
     padding: 20px 20px 16px;
+    text-decoration: none;
 }
 
 .brand-icon {
@@ -132,7 +133,7 @@ body {
 }
 
 .brand-text {
-    font-size: 17px;
+    font-size: 16px;
     font-weight: 700;
     color: var(--accent);
     letter-spacing: -0.3px;
@@ -165,10 +166,10 @@ body {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 9px 12px;
-    border-radius: 8px;
+    padding: 11px 14px;
+    border-radius: 10px;
     color: var(--text2);
-    font-size: 13.5px;
+    font-size: 14.5px;
     font-weight: 500;
     transition: all 0.15s ease;
     text-decoration: none;
@@ -219,14 +220,14 @@ body {
 }
 
 .header-title {
-    font-size: 22px;
+    font-size: 24px;
     font-weight: 700;
     color: var(--text);
     letter-spacing: -0.3px;
 }
 
 .header-sub {
-    font-size: 13px;
+    font-size: 14px;
     color: var(--text3);
     margin-top: 2px;
 }
@@ -289,6 +290,57 @@ body {
     box-shadow: var(--shadow);
 }
 
+/* Dashboard quick actions */
+.dashboard-actions {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 24px;
+}
+
+.dashboard-action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 24px 20px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    flex: 1;
+    min-width: 0;
+}
+
+.dashboard-action-btn:hover {
+    border-color: var(--accent);
+    background: var(--accent-bg);
+    color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+}
+
+.dashboard-action-btn:active {
+    transform: translateY(0);
+}
+
+.dashboard-action-primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+}
+
+.dashboard-action-primary:hover {
+    background: var(--accent-hover, var(--accent));
+    color: #fff;
+    border-color: var(--accent-hover, var(--accent));
+}
+
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -345,7 +397,7 @@ a.stat-card-link:active {
 .stat-info { flex: 1; min-width: 0; }
 
 .stat-label {
-    font-size: 12px;
+    font-size: 13px;
     color: var(--text3);
     font-weight: 500;
     text-transform: uppercase;
@@ -354,7 +406,7 @@ a.stat-card-link:active {
 }
 
 .stat-value {
-    font-size: 24px;
+    font-size: 28px;
     font-weight: 700;
     color: var(--text);
     letter-spacing: -0.5px;
@@ -1002,8 +1054,8 @@ tbody td {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 18px;
-  margin-bottom: 4px;
+  padding: 16px 20px;
+  margin-bottom: 6px;
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -1231,6 +1283,20 @@ tbody td {
   gap: 8px;
 }
 
+.pos-cart-calc {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+}
+
+.pos-cart-unit {
+  font-size: 11px;
+  color: var(--text3);
+  font-family: 'Courier New', monospace;
+  white-space: nowrap;
+}
+
 .pos-cart-line {
   font-size: 15px;
   font-weight: 700;
@@ -1331,10 +1397,10 @@ tbody td {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  padding: 18px;
+  padding: 22px;
   border-radius: 14px;
   border: none;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
@@ -1530,6 +1596,7 @@ tbody td {
   #receiptContent th {
     border-bottom: 1px solid #000 !important;
     color: #000 !important;
+    background: transparent !important;
   }
   #receiptContent td {
     color: #000 !important;
@@ -1552,6 +1619,67 @@ tbody td {
   }
 }
 
+/* Welcome overlay */
+.welcome-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+}
+
+.welcome-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 32px;
+  max-width: 440px;
+  width: 90%;
+  box-shadow: 0 25px 60px rgba(0,0,0,0.25);
+}
+
+.welcome-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.welcome-step {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.welcome-step-num {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.welcome-step strong {
+  display: block;
+  font-size: 15px;
+  margin-bottom: 2px;
+}
+
+.welcome-step p {
+  font-size: 13px;
+  color: var(--text3);
+  margin: 0;
+  line-height: 1.4;
+}
+
 /* Responsive */
 @media (max-width: 600px) {
   .pos-layout { height: calc(100vh - 80px); padding: 0 4px; }
@@ -1560,6 +1688,9 @@ tbody td {
   .pos-result-name, .pos-result-price { font-size: 15px; }
   .pos-total { font-size: 32px; }
   .pos-pay-btn { padding: 14px; font-size: 16px; }
+  .dashboard-actions { flex-direction: column; }
+  .dashboard-action-btn { padding: 18px 16px; font-size: 16px; }
+  .welcome-card { padding: 24px 20px; }
 }
 /* ── Settings ───────────────────────────────────────────── */
 .settings-grid {
@@ -1662,6 +1793,7 @@ tbody td {
 
 .receipt-print th {
     color: #000 !important;
+    background: transparent !important;
     border-bottom: 1px solid #999 !important;
 }
 

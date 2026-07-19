@@ -71,9 +71,9 @@ function viewSale(id) {
     api.get('/api/sales/' + id).then(function(r) {
         if (r.error) { alert(r.error); return; }
         document.getElementById('saleDetailTitle').textContent = 'Bill: ' + r.bill_number;
-        let html = '<table style="width:100%"><thead><tr><th>Medicine</th><th>Batch</th><th class="text-right">Qty</th><th class="text-right">Price</th><th class="text-right">Subtotal</th></tr></thead><tbody>';
+        let html = '<table style="width:100%"><thead><tr><th>Medicine</th><th>Batch</th><th class="text-right">Qty</th><th class="text-right">Subtotal</th></tr></thead><tbody>';
         r.items.forEach(function(i) {
-            html += '<tr><td>' + i.medicine_name + '</td><td class="font-mono text-sm">' + i.batch_number + '</td><td class="text-right">' + i.quantity + '</td><td class="text-right font-mono">Rs ' + i.selling_price.toFixed(2) + '</td><td class="text-right font-mono">Rs ' + i.subtotal.toFixed(2) + '</td></tr>';
+            html += '<tr><td>' + i.medicine_name + '</td><td class="font-mono text-sm">' + i.batch_number + '</td><td class="text-right">' + i.quantity + '</td><td class="text-right font-mono" style="font-size:12px;"><span style="color:var(--text3);">Rs ' + i.selling_price.toFixed(2) + ' × ' + i.quantity + '</span> = <strong>Rs ' + i.subtotal.toFixed(2) + '</strong></td></tr>';
         });
         html += '</tbody></table>';
         html += '<div style="margin-top:16px; border-top:1px solid var(--border); padding-top:12px;">';

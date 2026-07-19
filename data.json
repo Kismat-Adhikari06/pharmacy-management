@@ -1,0 +1,24 @@
+{
+  "items": [
+    { "sn": 1, "item_description": "Paracetamol 500mg", "batch": "PCM2201", "expiry_date": "2027-06-30", "qty": 200, "rate": 1.50, "amount": 300.00, "mrp": 2.50 },
+    { "sn": 2, "item_description": "Amoxicillin 500mg", "batch": "AMX3345", "expiry_date": "2026-11-30", "qty": 100, "rate": 4.20, "amount": 420.00, "mrp": 6.00 },
+    { "sn": 3, "item_description": "Cetirizine 10mg", "batch": "CTZ1187", "expiry_date": "2027-02-28", "qty": 150, "rate": 1.10, "amount": 165.00, "mrp": 1.80 },
+    { "sn": 4, "item_description": "Omeprazole 20mg", "batch": "OMP4021", "expiry_date": "2026-09-30", "qty": 120, "rate": 3.50, "amount": 420.00, "mrp": 5.00 },
+    { "sn": 5, "item_description": "Metformin 500mg", "batch": "MET2230", "expiry_date": "2026-10-31", "qty": 300, "rate": 1.80, "amount": 540.00, "mrp": 2.75 },
+    { "sn": 6, "item_description": "Ciprofloxacin 500mg", "batch": "CIP6654", "expiry_date": "2027-05-31", "qty": 100, "rate": 6.50, "amount": 650.00, "mrp": 9.00 },
+    { "sn": 7, "item_description": "Ibuprofen 400mg", "batch": "IBU7789", "expiry_date": "2026-08-31", "qty": 200, "rate": 1.90, "amount": 380.00, "mrp": 3.00 },
+    { "sn": 8, "item_description": "Azithromycin 500mg", "batch": "AZM9012", "expiry_date": "2027-01-31", "qty": 60, "rate": 12.00, "amount": 720.00, "mrp": 16.50 },
+    { "sn": 9, "item_description": "Losartan 50mg", "batch": "LST4490", "expiry_date": "2027-07-31", "qty": 210, "rate": 2.40, "amount": 504.00, "mrp": 3.75 },
+    { "sn": 10, "item_description": "Atorvastatin 10mg", "batch": "ATV8822", "expiry_date": "2027-08-31", "qty": 120, "rate": 3.00, "amount": 360.00, "mrp": 4.50 },
+    { "sn": 11, "item_description": "Domperidone 10mg", "batch": "DMP3341", "expiry_date": "2026-12-31", "qty": 150, "rate": 1.20, "amount": 180.00, "mrp": 2.00 },
+    { "sn": 12, "item_description": "Multivitamin Syrup 200ml", "batch": "MVS0015", "expiry_date": "2026-01-31", "qty": 75, "rate": 85.00, "amount": 6375.00, "mrp": 120.00 },
+    { "sn": 13, "item_description": "ORS Sachet", "batch": "ORS5567", "expiry_date": "2027-03-31", "qty": 300, "rate": 8.00, "amount": 2400.00, "mrp": 12.00 },
+    { "sn": 14, "item_description": "Diclofenac 50mg", "batch": "DCF2298", "expiry_date": "2026-07-31", "qty": 180, "rate": 1.60, "amount": 288.00, "mrp": 2.50 },
+    { "sn": 15, "item_description": "Pantoprazole 40mg", "batch": "PNT6673", "expiry_date": "2027-04-30", "qty": 100, "rate": 4.00, "amount": 400.00, "mrp": 6.00 },
+    { "sn": 16, "item_description": "Amlodipine 5mg", "batch": "AML1011", "expiry_date": "2027-06-30", "qty": 200, "rate": 2.20, "amount": 440.00, "mrp": 3.50 },
+    { "sn": 17, "item_description": "Vitamin C 500mg", "batch": "VTC9034", "expiry_date": "2027-09-30", "qty": 250, "rate": 1.30, "amount": 325.00, "mrp": 2.20 },
+    { "sn": 18, "item_description": "Cough Syrup (Ambrox) 100ml", "batch": "AMB7723", "expiry_date": "2026-11-30", "qty": 90, "rate": 45.00, "amount": 4050.00, "mrp": 65.00 },
+    { "sn": 19, "item_description": "Levocetirizine 5mg", "batch": "LVC4456", "expiry_date": "2027-01-31", "qty": 160, "rate": 1.70, "amount": 272.00, "mrp": 2.80 },
+    { "sn": 20, "item_description": "Rabeprazole 20mg", "batch": "RBP8890", "expiry_date": "2026-10-31", "qty": 100, "rate": 5.20, "amount": 520.00, "mrp": 7.50 }
+  ]
+}
